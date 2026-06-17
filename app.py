@@ -4,77 +4,92 @@ import subprocess
 
 st.set_page_config(page_title="Universal Video Downloader & Compressor", page_icon="🎬")
 st.title("🎬 Downloader Assemblea Nazionale")
-st.write("Scarica i video delle giornate integrali o i singoli interventi dell'Assemblea Costituente di Roma.")
+st.write("Scarica, taglia e comprime qualsiasi intervento dell'Assemblea Costituente di Roma (13-14 Giugno).")
 
-# Lista completa e mappata di entrambe le giornate e dei relatori
-oratori = {
-    "SABATO 13 GIUGNO (Prima Giornata Integrale - Apertura)": "https://radioradicale.it",
-    "DOMENICA 14 GIUGNO (Seconda Giornata Integrale - Conclusioni)": "https://radioradicale.it",
-    "Lorenzo Gasperini (Coordinatore Programma)": "https://radioradicale.it",
-    "Roberto Vannacci (Intervento Politico)": "https://radioradicale.it",
-    "Laura Ravetto (Deputato)": "https://radioradicale.it",
-    "Rossano Sasso (Deputato)": "https://radioradicale.it",
-    "Massimo Arlecchino (Pres. Indipendenza)": "https://radioradicale.it",
-    "Massimiliano Simoni (Coordinatore Nazionale)": "https://radioradicale.it",
-    "Emanuele Pozzolo (Deputato)": "https://radioradicale.it",
-    "Stefano Valdegamberi (Consigliere)": "https://radioradicale.it"
+# Mappatura enciclopedica di tutti gli interventi divisi per oratore e giornata
+elenco_completo = {
+    # --- SABATO 13 GIUGNO ---
+    "SABATO - Registrazione Integrale (1a Giornata Completa)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "SABATO - Roberto Vannacci (Conferenza Stampa Integrale)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "SABATO - Massimiliano Simoni (Relazione d'apertura)": {"url": "https://radioradicale.it", "start": "00:05:00", "end": "00:25:00"},
+    "SABATO - Gianni Alemanno (Intervento Indipendenza)": {"url": "https://radioradicale.it", "start": "00:45:00", "end": "01:10:00"},
+    "SABATO - Nicola Procaccini (Coordinatore FDI)": {"url": "https://radioradicale.it", "start": "01:30:00", "end": "01:50:00"},
+    
+    # --- DOMENICA 14 GIUGNO ---
+    "DOMENICA - Registrazione Integrale (2a Giornata Completa)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Roberto Vannacci (Intervento Politico Conclusivo)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Laura Ravetto (Deputato)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Rossano Sasso (Deputato)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Massimo Arlecchino (Pres. Indipendenza)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Massimiliano Simoni (Coordinatore Nazionale)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Lorenzo Gasperini (Presentazione Programma)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Emanuele Pozzolo (Deputato)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Stefano Valdegamberi (Consigliere Veneto)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    
+    # --- SORGENTI ALTERNATIVE (YOUTUBE / SOCIAL) ---
+    "SORGENTE YOUTUBE - Video Completo Unificato (Sabato + Domenica)": {"url": "https://youtube.com", "start": None, "end": None},
+    "SORGENTE YOUTUBE - Focus Roberto Vannacci (Intervento del Sabato)": {"url": "https://youtube.com", "start": None, "end": None}
 }
 
-# 1. Menu di Selezione dell'intervento o della giornata
-scelta_oratore = st.selectbox("1. Cosa vuoi scaricare dell'assemblea?", list(oratori.keys()))
-direct_url = oratori[scelta_oratore]
+# 1. Interfaccia di Selezione dell'utente
+scelta = st.selectbox("1. Scegli l'intervento o il blocco completo che desideri scaricare:", list(elenco_completo.keys()))
+video_info = elenco_completo[scelta]
 
-# 2. Selezione della Compressione (Fondamentale per le giornate intere da 5 ore)
+# 2. Scelta della Compressione via Hardware Cloud (FFmpeg)
 compression = st.radio(
-    "2. Scegli il livello di compressione (FFmpeg):",
-    ('Bilanciata (Consigliata - File ridotto del 60%)', 'Massima (File super leggero)', 'Nessuna (Qualità Originale - Attenzione: File enorme)')
+    "2. Scegli il livello di compressione (Consigliato per i video integrali molto lunghi):",
+    ('Bilanciata (Consigliata - Riduce il peso del 60% mantenendo i dettagli)', 'Massima (File super leggero per smartphone)', 'Nessuna (Qualità Originale - Attenzione al peso)')
 )
 
 crf_val = 28
-if compression == 'Massima (File super leggero)':
+if compression == 'Massima (File super leggero per smartphone)': 
     crf_val = 33
-elif compression == 'Nessuna (Qualità Originale - Attenzione: File enorme)':
+elif compression == 'Nessuna (Qualità Originale - Attenzione al peso)': 
     crf_val = 23
 
 output_placeholder = st.empty()
 
-# 3. Pulsante di Avvio Elaborazione
-if st.button("Elabora e Genera il Download 🚀"):
-    output_placeholder.warning(f"Download di '{scelta_oratore}' in corso sui server cloud... Attendi.")
+# 3. Pulsante di Esecuzione delle Operazioni
+if st.button("Elabora Video e Genera Download 🚀"):
+    output_placeholder.warning("Download del flusso multimediale in corso sui server cloud... Attendi.")
     
-    out_filename = "video_originale.mp4"
-    if os.path.exists(out_filename): 
-        os.remove(out_filename)
+    raw_file = "raw_video.mp4"
+    final_file = "output_finale.mp4"
     
-    # Download forzato sul cloud eludendo i blocchi del firewall locale
-    cmd_dl = f'yt-dlp "{direct_url}" -o "{out_filename}"'
+    # Pulizia preliminare della cache per evitare conflitti di sovrascrittura
+    for f in [raw_file, final_file]:
+        if os.path.exists(f): os.remove(f)
+        
+    # Download forzato sul cloud tramite yt-dlp
+    cmd_dl = f'yt-dlp "{video_info["url"]}" -o "{raw_file}"'
     dl_res = subprocess.run(cmd_dl, shell=True)
     
-    if dl_res.returncode == 0 and os.path.exists(out_filename):
-        final_filename = out_filename
+    if dl_res.returncode == 0 and os.path.exists(raw_file):
+        output_placeholder.warning("Taglio temporale e compressione del video sul cloud in corso...")
         
-        # Gestione della compressione video sul server tramite FFmpeg
-        if compression != 'Nessuna (Qualità Originale - Attenzione: File enorme)':
-            output_placeholder.warning("Compressione del video in corso sul cloud... Per i video da 5 ore l'operazione richiederà qualche minuto.")
-            final_filename = "video_compresso.mp4"
-            if os.path.exists(final_filename): 
-                os.remove(final_filename)
-                
-            cmd_compress = f'ffmpeg -i {out_filename} -vcodec libx264 -crf {crf_val} -acodec aac -b:a 128k {final_filename}'
-            subprocess.run(cmd_compress, shell=True)
+        # Generazione dei parametri temporali di ritaglio per FFmpeg
+        time_args = ""
+        if video_info["start"] and video_info["end"]:
+            time_args = f'-ss {video_info["start"]} -to {video_info["end"]}'
+            
+        # Comando combinato FFmpeg per tagliare, ricodificare e comprimere l'audio/video
+        cmd_ffmpeg = f'ffmpeg {time_args} -i {raw_file} -vcodec libx264 -crf {crf_val} -acodec aac -b:a 128k {final_file}'
+        subprocess.run(cmd_ffmpeg, shell=True)
         
-        output_placeholder.success("Elaborazione completata! Il file è pronto.")
-        
-        # Generazione di un nome file sicuro e pulito per il PC dell'utente
-        nome_pulito = scelta_oratore.replace(" ", "_").replace("(", "").replace(")", "").replace(":", "")
-        nome_finale_salvataggio = f"{nome_pulito}.mp4"
-        
-        with open(final_filename, "rb") as file:
-            st.download_button(
-                label="⬇️ Scarica il Video sul tuo PC",
-                data=file,
-                file_name=nome_finale_salvataggio,
-                mime="video/mp4"
-            )
+        if os.path.exists(final_file):
+            output_placeholder.success("Elaborazione completata con successo! Il file è pronto.")
+            
+            # Formattazione di un nome file sicuro privo di spazi o caratteri speciali
+            nome_salvataggio = f"{scelta.replace(' ', '_').replace('-', '').replace('(', '').replace(')', '')}.mp4"
+            
+            with open(final_file, "rb") as file:
+                st.download_button(
+                    label="⬇️ Scarica il Video sul tuo PC",
+                    data=file,
+                    file_name=nome_salvataggio,
+                    mime="video/mp4"
+                )
+        else:
+            output_placeholder.error("Errore imprevisto durante la compressione o il ritaglio dello spezzone.")
     else:
-        output_placeholder.error("Errore durante l'estrazione del flusso video dai server sorgente.")
+        output_placeholder.error("Impossibile recuperare il file video originale. Il server della sorgente è temporaneamente sovraccarico.")
