@@ -4,9 +4,26 @@ import subprocess
 
 st.set_page_config(page_title="Universal Video Downloader & Compressor", page_icon="🎬")
 st.title("🎬 Downloader Assemblea Nazionale")
+
+# ==========================================
+# BLOCCO DI SICUREZZA CON PASSWORD
+# ==========================================
+# Puoi cambiare "Futuro2026" con qualsiasi password desideri
+PASSWORD_CORRETTA = "Futuro2026"
+
+password_inserita = st.text_input("Inserisci la password di sicurezza per accedere al pannello:", type="password")
+
+if password_inserita != PASSWORD_CORRETTA:
+    st.warning("🔒 Accesso limitato. Inserisci la password corretta per sbloccare le funzioni di download.")
+    st.stop()  # Interrompe l'applicazione qui finché la password non è corretta
+
+# ==========================================
+# APPLICAZIONE REALE (ACCESSIBILE DOPO LOGIN)
+# ==========================================
+st.success("🔓 Accesso consentito!")
 st.write("Scarica, taglia e comprime qualsiasi intervento dell'Assemblea Costituente di Roma (13-14 Giugno).")
 
-# Mappatura enciclopedica di tutti gli interventi divisi per oratore e giornata
+# Mappatura completa di tutti gli interventi divisi per oratore e giornata
 elenco_completo = {
     # --- SABATO 13 GIUGNO ---
     "SABATO - Registrazione Integrale (1a Giornata Completa)": {"url": "https://radioradicale.it", "start": None, "end": None},
@@ -26,7 +43,7 @@ elenco_completo = {
     "DOMENICA - Emanuele Pozzolo (Deputato)": {"url": "https://radioradicale.it", "start": None, "end": None},
     "DOMENICA - Stefano Valdegamberi (Consigliere Veneto)": {"url": "https://radioradicale.it", "start": None, "end": None},
     
-    # --- SORGENTI ALTERNATIVE (YOUTUBE / SOCIAL) ---
+    # --- SORGENTI ALTERNATIVE (YOUTUBE) ---
     "SORGENTE YOUTUBE - Video Completo Unificato (Sabato + Domenica)": {"url": "https://youtube.com", "start": None, "end": None},
     "SORGENTE YOUTUBE - Focus Roberto Vannacci (Intervento del Sabato)": {"url": "https://youtube.com", "start": None, "end": None}
 }
@@ -56,7 +73,7 @@ if st.button("Elabora Video e Genera Download 🚀"):
     raw_file = "raw_video.mp4"
     final_file = "output_finale.mp4"
     
-    # Pulizia preliminare della cache per evitare conflitti di sovrascrittura
+    # Pulizia preliminare della cache per evitare conflitti
     for f in [raw_file, final_file]:
         if os.path.exists(f): os.remove(f)
         
@@ -72,14 +89,14 @@ if st.button("Elabora Video e Genera Download 🚀"):
         if video_info["start"] and video_info["end"]:
             time_args = f'-ss {video_info["start"]} -to {video_info["end"]}'
             
-        # Comando combinato FFmpeg per tagliare, ricodificare e comprimere l'audio/video
+        # Comando combinato FFmpeg per tagliare e comprimere l'audio/video
         cmd_ffmpeg = f'ffmpeg {time_args} -i {raw_file} -vcodec libx264 -crf {crf_val} -acodec aac -b:a 128k {final_file}'
         subprocess.run(cmd_ffmpeg, shell=True)
         
         if os.path.exists(final_file):
             output_placeholder.success("Elaborazione completata con successo! Il file è pronto.")
             
-            # Formattazione di un nome file sicuro privo di spazi o caratteri speciali
+            # Formattazione di un nome file sicuro
             nome_salvataggio = f"{scelta.replace(' ', '_').replace('-', '').replace('(', '').replace(')', '')}.mp4"
             
             with open(final_file, "rb") as file:
@@ -92,4 +109,4 @@ if st.button("Elabora Video e Genera Download 🚀"):
         else:
             output_placeholder.error("Errore imprevisto durante la compressione o il ritaglio dello spezzone.")
     else:
-        output_placeholder.error("Impossibile recuperare il file video originale. Il server della sorgente è temporaneamente sovraccarico.")
+        output_placeholder.error("Impossibile recuperare il file video originale. Il server della sorgente è sovraccarico.")
