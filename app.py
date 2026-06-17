@@ -1,92 +1,80 @@
 import streamlit as st
 import os
 import subprocess
-import json
 
 st.set_page_config(page_title="Universal Video Downloader & Compressor", page_icon="🎬")
-st.title("🎬 Video Downloader & Compressor")
-st.write("Scarica e comprime video da qualsiasi sito web, superando i blocchi di rete.")
+st.title("🎬 Downloader Assemblea Nazionale")
+st.write("Scarica i video delle giornate integrali o i singoli interventi dell'Assemblea Costituente di Roma.")
 
-# Input principale per l'URL della pagina
-url = st.text_input("1. Incolla l'URL della pagina web o del video:", "")
+# Lista completa e mappata di entrambe le giornate e dei relatori
+oratori = {
+    "SABATO 13 GIUGNO (Prima Giornata Integrale - Apertura)": "https://radioradicale.it",
+    "DOMENICA 14 GIUGNO (Seconda Giornata Integrale - Conclusioni)": "https://radioradicale.it",
+    "Lorenzo Gasperini (Coordinatore Programma)": "https://radioradicale.it",
+    "Roberto Vannacci (Intervento Politico)": "https://radioradicale.it",
+    "Laura Ravetto (Deputato)": "https://radioradicale.it",
+    "Rossano Sasso (Deputato)": "https://radioradicale.it",
+    "Massimo Arlecchino (Pres. Indipendenza)": "https://radioradicale.it",
+    "Massimiliano Simoni (Coordinatore Nazionale)": "https://radioradicale.it",
+    "Emanuele Pozzolo (Deputato)": "https://radioradicale.it",
+    "Stefano Valdegamberi (Consigliere)": "https://radioradicale.it"
+}
 
-if url:
-    # Selezione universale della compressione
-    compression = st.radio(
-        "2. Scegli il tipo di compressione:",
-        ('Nessuna (Qualità Originale)', 'Bilanciata (Consigliata per PC/Smartphone)', 'Massima (File leggerissimo)')
-    )
-    
+# 1. Menu di Selezione dell'intervento o della giornata
+scelta_oratore = st.selectbox("1. Cosa vuoi scaricare dell'assemblea?", list(oratori.keys()))
+direct_url = oratori[scelta_oratore]
+
+# 2. Selezione della Compressione (Fondamentale per le giornate intere da 5 ore)
+compression = st.radio(
+    "2. Scegli il livello di compressione (FFmpeg):",
+    ('Bilanciata (Consigliata - File ridotto del 60%)', 'Massima (File super leggero)', 'Nessuna (Qualità Originale - Attenzione: File enorme)')
+)
+
+crf_val = 28
+if compression == 'Massima (File super leggero)':
+    crf_val = 33
+elif compression == 'Nessuna (Qualità Originale - Attenzione: File enorme)':
     crf_val = 23
-    if compression == 'Bilanciata (Consigliata per PC/Smartphone)':
-        crf_val = 28
-    elif compression == 'Massima (File leggerissimo)':
-        crf_val = 32
 
-    output_placeholder = st.empty()
+output_placeholder = st.empty()
+
+# 3. Pulsante di Avvio Elaborazione
+if st.button("Elabora e Genera il Download 🚀"):
+    output_placeholder.warning(f"Download di '{scelta_oratore}' in corso sui server cloud... Attendi.")
     
-    # Tentativo di estrazione automatica delle informazioni
-    cmd_info = f'yt-dlp "{url}" -J'
-    result = subprocess.run(cmd_info, shell=True, capture_output=True, text=True)
+    out_filename = "video_originale.mp4"
+    if os.path.exists(out_filename): 
+        os.remove(out_filename)
     
-    # CASO A: Il sito viene analizzato correttamente
-    if result.returncode == 0:
-        try:
-            video_data = json.loads(result.stdout)
-            entries = video_data.get('entries', [video_data])
-            video_options = {entry.get('title', f"Video {i+1}"): i + 1 for i, entry in enumerate(entries)}
-            
-            selected_title = st.selectbox("Seleziona il video specifico trovato nella pagina:", list(video_options.keys()))
-            item_index = video_options[selected_title]
-            
-            if st.button("Avvia Download e Compressione 🚀"):
-                output_placeholder.warning("Download in corso sui server cloud...")
-                out_filename = "video_originale.mp4"
-                if os.path.exists(out_filename): os.remove(out_filename)
-                
-                cmd_dl = f'yt-dlp --playlist-items {item_index} "{url}" -o "{out_filename}"'
-                dl_res = subprocess.run(cmd_dl, shell=True)
-                
-                if dl_res.returncode == 0 and os.path.exists(out_filename):
-                    final_filename = out_filename
-                    if compression != 'Nessuna (Qualità Originale)':
-                        output_placeholder.warning("Compressione in corso sul cloud... Attendi.")
-                        final_filename = "video_compresso.mp4"
-                        if os.path.exists(final_filename): os.remove(final_filename)
-                        cmd_compress = f'ffmpeg -i {out_filename} -vcodec libx264 -crf {crf_val} -acodec aac -b:a 128k {final_filename}'
-                        subprocess.run(cmd_compress, shell=True)
-                    
-                    output_placeholder.success("Pronto!")
-                    with open(final_filename, "rb") as file:
-                        st.download_button(label="⬇️ Scarica il Video sul tuo PC", data=file, file_name="video_finale.mp4", mime="video/mp4")
-        except:
-            st.error("Errore di lettura dati.")
-            
-    # CASO B: Il sito blocca l'analisi automatica (Es. Radio Radicale) -> Attiva la modalità forzata
-    else:
-        st.warning("⚠️ Questa specifica pagina richiede il Download Forzato. Usa il link video diretto.")
-        direct_url = st.text_input("Inserisci l'URL diretto del file MP4/M3U8 (per Gasperini inserisci quello fornito):", "https://radioradicale.it")
+    # Download forzato sul cloud eludendo i blocchi del firewall locale
+    cmd_dl = f'yt-dlp "{direct_url}" -o "{out_filename}"'
+    dl_res = subprocess.run(cmd_dl, shell=True)
+    
+    if dl_res.returncode == 0 and os.path.exists(out_filename):
+        final_filename = out_filename
         
-        if st.button("Avvia Download Forzato 🚀"):
-            output_placeholder.warning("Download forzato dal server cloud in corso...")
-            out_filename = "video_originale.mp4"
-            if os.path.exists(out_filename): os.remove(out_filename)
-            
-            # Scarica direttamente senza analizzare la pagina web
-            cmd_dl = f'yt-dlp "{direct_url}" -o "{out_filename}"'
-            dl_res = subprocess.run(cmd_dl, shell=True)
-            
-            if dl_res.returncode == 0 and os.path.exists(out_filename):
-                final_filename = out_filename
-                if compression != 'Nessuna (Qualità Originale)':
-                    output_placeholder.warning("Compressione del video in corso sul cloud... Attendi.")
-                    final_filename = "video_compresso.mp4"
-                    if os.path.exists(final_filename): os.remove(final_filename)
-                    cmd_compress = f'ffmpeg -i {out_filename} -vcodec libx264 -crf {crf_val} -acodec aac -b:a 128k {final_filename}'
-                    subprocess.run(cmd_compress, shell=True)
+        # Gestione della compressione video sul server tramite FFmpeg
+        if compression != 'Nessuna (Qualità Originale - Attenzione: File enorme)':
+            output_placeholder.warning("Compressione del video in corso sul cloud... Per i video da 5 ore l'operazione richiederà qualche minuto.")
+            final_filename = "video_compresso.mp4"
+            if os.path.exists(final_filename): 
+                os.remove(final_filename)
                 
-                output_placeholder.success("Elaborazione completata!")
-                with open(final_filename, "rb") as file:
-                    st.download_button(label="⬇️ Scarica il Video sul tuo PC", data=file, file_name="intervento_gasperini_compresso.mp4", mime="video/mp4")
-            else:
-                output_placeholder.error("Errore nel download forzato. Il link del server potrebbe essere cambiato.")
+            cmd_compress = f'ffmpeg -i {out_filename} -vcodec libx264 -crf {crf_val} -acodec aac -b:a 128k {final_filename}'
+            subprocess.run(cmd_compress, shell=True)
+        
+        output_placeholder.success("Elaborazione completata! Il file è pronto.")
+        
+        # Generazione di un nome file sicuro e pulito per il PC dell'utente
+        nome_pulito = scelta_oratore.replace(" ", "_").replace("(", "").replace(")", "").replace(":", "")
+        nome_finale_salvataggio = f"{nome_pulito}.mp4"
+        
+        with open(final_filename, "rb") as file:
+            st.download_button(
+                label="⬇️ Scarica il Video sul tuo PC",
+                data=file,
+                file_name=nome_finale_salvataggio,
+                mime="video/mp4"
+            )
+    else:
+        output_placeholder.error("Errore durante l'estrazione del flusso video dai server sorgente.")
