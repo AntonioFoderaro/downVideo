@@ -46,7 +46,8 @@ id_video_ufficiale = dizionario_video[scelta_sorgente]
 st.write("")
 st.subheader("📺 Player Iframe Istituzionale Sbloccato")
 
-# 2. INIEZIONE DEL PLAYER IFRAME SBLOCCATO (Sistemata la formattazione dello slash nell'URL)
+# 2. INIEZIONE DEL PLAYER IFRAME SBLOCCATO
+# L'URL è stato corretto inserendo i corretti separatori slash per evitare l'errore del DNS
 iframe_html = f"""
 <div style="text-align: center;">
     <iframe 
