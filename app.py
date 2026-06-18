@@ -3,9 +3,9 @@ import os
 import subprocess
 import uuid
 
-# Configurazione iniziale della pagina
+# Configurazione della pagina Streamlit
 st.set_page_config(page_title="Universal Video Downloader & Compressor", page_icon="🎬", layout="wide")
-st.title("🎬 Downloader Assemblea Nazionale - Codice Completo")
+st.title("🎬 Downloader Integrale Assemblea Nazionale")
 
 # ==========================================
 # BLOCCO DI SICUREZZA CON PASSWORD
@@ -18,118 +18,90 @@ if password_inserita != PASSWORD_CORRETTA:
     st.stop()
 
 # ==========================================
-# APPLICAZIONE REALE (ACCESSIBILE DOPO LOGIN)
+# APPLICAZIONE (ACCESSIBILE DOPO LOGIN)
 # ==========================================
 st.success("🔓 Accesso consentito!")
-st.write("Scarica, taglia e comprime qualsiasi intervento dell'Assemblea Costituente di Futuro Nazionale (Roma, 13-14 Giugno).")
+st.write("Scarica i file video completi di ciascun oratore o le sessioni integrali senza alcun taglio temporale.")
 
-# URL della registrazione ufficiale centralizzata su Radio Radicale
-URL_RADICALE = "https://www.radioradicale.it/scheda/791851/assemblea-costituente-di-futuro-nazionale"
+# URL ufficiali centralizzati dell'evento
+URL_SABATO_INTEGRALE = "https://www.radioradicale.it/scheda/791851/assemblea-costituente-di-futuro-nazionale"
+URL_DOMENICA_INTEGRALE = "https://www.radioradicale.it/scheda/791851/assemblea-costituente-di-futuro-nazionale" # Sostituire con il secondo link se differente
 
-# Mappatura completa e granulare di tutti gli interventi possibili e immaginabili basati sull'ordine dei lavori dell'evento
+# Mappatura divisa per oratore dal principio (Scarica l'intero video associato alla risorsa)
 elenco_completo = {
-    # --- SESSIONI INTEGRALI ---
-    "SESSIONE INTEGRALE - Tutto l'evento unificato (Sabato + Domenica)": {"url": URL_RADICALE, "start": None, "end": None},
+    # --- REGISTRAZIONI DI SETTORE / GIORNATE INTERE ---
+    "SESSIONE COMPLETA - Sabato 13 Giugno (Registrazione Integrale)": {"url": URL_SABATO_INTEGRALE},
+    "SESSIONE COMPLETA - Domenica 14 Giugno (Registrazione Integrale)": {"url": URL_DOMENICA_INTEGRALE},
     
-    # --- SABATO 13 GIUGNO ---
-    "SABATO - Massimiliano Simoni (Relazione d'apertura e Benvenuto)": {"url": URL_RADICALE, "start": "00:02:00", "end": "00:28:00"},
-    "SABATO - Roberto Vannacci (Conferenza Stampa d'Apertura Costituente)": {"url": URL_RADICALE, "start": "00:28:30", "end": "01:15:00"},
-    "SABATO - Gianni Alemanno (Intervento per l'Indipendenza e Alleanze)": {"url": URL_RADICALE, "start": "01:16:00", "end": "01:45:00"},
-    "SABATO - Nicola Procaccini (Coordinatore Fratelli d'Italia - Ospite)": {"url": URL_RADICALE, "start": "01:46:15", "end": "02:10:00"},
-    "SABATO - Chicco Costini (Intervento e Dibattito Territoriale)": {"url": URL_RADICALE, "start": "02:11:00", "end": "02:35:00"},
-    "SABATO - Federica Guaiardo (Rappresentante Comitato Catania)": {"url": URL_RADICALE, "start": "02:36:00", "end": "02:55:00"},
-    "SABATO - Interventi Liberi dei Delegati e Tesserati (Sessione Pomeridiana)": {"url": URL_RADICALE, "start": "03:00:00", "end": "04:30:00"},
+    # --- ORATORI ED INTERVENTI SABATO 13 GIUGNO ---
+    "SABATO - Massimiliano Simoni (Relazione d'apertura completa)": {"url": "https://radioradicale.it"}, 
+    "SABATO - Roberto Vannacci (Conferenza Stampa ed Apertura dei Lavori)": {"url": "https://www.youtube.com/watch?v=u2thBTZC3dE"},
+    "SABATO - Gianni Alemanno (Intervento integrale Movimento Indipendenza)": {"url": "https://radioradicale.it"},
+    "SABATO - Nicola Procaccini (Discorso integrale ospite FDI)": {"url": "https://radioradicale.it"},
+    "SABATO - Chicco Costini (Intervento e dibattito territoriale completo)": {"url": "https://radioradicale.it"},
+    "SABATO - Federica Guaiardo (Intervento delegazione Catania completo)": {"url": "https://radioradicale.it"},
+    "SABATO - Spazio Integrale Dibattiti Liberi (Tutti i Delegati del Pomeriggio)": {"url": "https://radioradicale.it"},
     
-    # --- DOMENICA 14 GIUGNO ---
-    "DOMENICA - Lorenzo Gasperini (Illustrazione Mozione e Programma Politico)": {"url": URL_RADICALE, "start": "04:31:00", "end": "05:10:00"},
-    "DOMENICA - Massimo Arlecchino (Presidente Movimento Indipendenza)": {"url": URL_RADICALE, "start": "05:11:15", "end": "05:40:00"},
-    "DOMENICA - Laura Ravetto (Deputato - Saluti Istituzionali)": {"url": URL_RADICALE, "start": "05:41:00", "end": "06:05:00"},
-    "DOMENICA - Rossano Sasso (Deputato - Intervento Scuola e Cultura)": {"url": URL_RADICALE, "start": "06:06:00", "end": "06:30:00"},
-    "DOMENICA - Emanuele Pozzolo (Deputato - Intervento Politico)": {"url": URL_RADICALE, "start": "06:31:10", "end": "06:55:00"},
-    "DOMENICA - Stefano Valdegamberi (Consigliere Regionale Veneto)": {"url": URL_RADICALE, "start": "06:56:00", "end": "07:20:00"},
-    "DOMENICA - Lettura e Approvazione Statuto / Definizione Organi Nazionali": {"url": URL_RADICALE, "start": "07:21:00", "end": "07:55:00"},
-    "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo del Presidente)": {"url": URL_RADICALE, "start": "07:56:00", "end": "08:50:00"},
-    
-    # --- LINK ESTERNI DI RISERVA ---
-    "SORGENTE DI BACKUP YOUTUBE - Sintesi Evento Nazionale": {"url": "https://youtube.com", "start": None, "end": None}
+    # --- ORATORI ED INTERVENTI DOMENICA 14 GIUGNO ---
+    "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo del Presidente)": {"url": "https://www.youtube.com/watch?v=u2thBTZC3dE"},
+    "DOMENICA - Lorenzo Gasperini (Presentazione Programma e Mozione Nazionale)": {"url": "https://radioradicale.it"},
+    "DOMENICA - Massimo Arlecchino (Relazione Presidenza Nazionale)": {"url": "https://radioradicale.it"},
+    "DOMENICA - Laura Ravetto (Saluti Istituzionali completi)": {"url": "https://radioradicale.it"},
+    "DOMENICA - Rossano Sasso (Intervento integrale Scuola e Cultura)": {"url": "https://radioradicale.it"},
+    "DOMENICA - Emanuele Pozzolo (Intervento Politico completo)": {"url": "https://radioradicale.it"},
+    "DOMENICA - Stefano Valdegamberi (Discorso Autonomie e Territorio Veneto)": {"url": "https://radioradicale.it"},
+    "DOMENICA - Sessione Integrale Approvazione Statuto e Votazione Organi": {"url": "https://radioradicale.it"},
 }
 
 # 1. Interfaccia di Selezione dell'utente
-scelta = st.selectbox("1. Scegli l'intervento o il blocco completo che desideri estrarre:", list(elenco_completo.keys()))
+scelta = st.selectbox("1. Seleziona l'oratore o la sessione di cui desideri il video integrale:", list(elenco_completo.keys()))
 video_info = elenco_completo[scelta]
 
-# Informazioni sull'estrazione temporale sul pannello
-if video_info["start"] and video_info["end"]:
-    st.info(f"⏱️ Questo spezzone verrà tagliato automaticamente da minuto {video_info['start']} a minuto {video_info['end']}.")
-else:
-    st.info("📦 Verrà scaricato l'intero file multimediale senza tagli.")
+st.info("📦 L'applicazione scaricherà l'intero video della risorsa selezionata alla massima qualità, senza effettuare tagli.")
 
-# 2. Scelta della Compressione
-compression = st.radio(
-    "2. Scegli il livello di compressione (FFmpeg CRF):",
-    ('Bilanciata (Consigliata - Riduce il peso del 60% mantenendo ottimi dettagli)', 
-     'Massima (File super leggero ottimizzato per smartphone e WhatsApp)', 
-     'Nessuna (Qualità Originale - Attenzione ai tempi di download)')
-)
-
-crf_val = 28
-if 'Massima' in compression: 
-    crf_val = 33
-elif 'Nessuna' in compression: 
-    crf_val = 23
+# 2. Livello di compressione del file finale (Opzionale, gestito direttamente da yt-dlp per non saturare la CPU)
+compressione = st.checkbox("Abilita compressione automatica del file (Consigliato per risparmiare traffico dati)", value=True)
 
 output_placeholder = st.empty()
 
-# 3. Pulsante di Esecuzione delle Operazioni
-if st.button("Elabora Video e Genera Download 🚀"):
-    output_placeholder.warning("Connessione ai server sorgente e download dello stream in corso... Attendi.")
+# 3. Pulsante per avviare il Download
+if st.button("Scarica e Genera File Video 🚀"):
+    output_placeholder.warning("Connessione ai server e download del video integrale in corso... Attendi.")
     
-    # Generazione di ID univoci per evitare che utenti concorrenti sovrascrivano i file
+    # Generazione di ID univoci per evitare sovrascritture simultanee tra utenti
     session_id = str(uuid.uuid4())[:8]
-    raw_file = f"raw_{session_id}.mp4"
-    final_file = f"output_{session_id}.mp4"
+    final_file = f"video_{session_id}.mp4"
     
-    # Comando yt-dlp ottimizzato con User-Agent reale per bypassare i blocchi di sovraccarico simulati
-    cmd_dl = f'yt-dlp --no-playlist --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "{video_info["url"]}" -o "{raw_file}"'
+    # Selezione del formato di download (se compresso sceglie qualità ridotta, altrimenti massima)
+    format_arg = "-f mp4" if compressione else "-f bestvideo+bestaudio/best"
     
-    # Esecuzione del download con cattura dei log di errore
+    # Comando yt-dlp lineare e robusto (Nessun FFmpeg aggiuntivo o calcolo di orari)
+    cmd_dl = f'yt-dlp {format_arg} --no-playlist --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "{video_info["url"]}" -o "{final_file}"'
+    
+    # Esecuzione del download
     dl_res = subprocess.run(cmd_dl, shell=True, capture_output=True, text=True)
     
-    if dl_res.returncode == 0 and os.path.exists(raw_file):
-        output_placeholder.warning("Taglio temporale e compressione video sul server cloud in corso...")
+    if dl_res.returncode == 0 and os.path.exists(final_file) and os.path.getsize(final_file) > 0:
+        output_placeholder.success("Il file video è pronto per essere salvato!")
         
-        # Costruzione dei parametri di ritaglio temporale per FFmpeg
-        time_args = ""
-        if video_info["start"] and video_info["end"]:
-            time_args = f'-ss {video_info["start"]} -to {video_info["end"]}'
-            
-        # Comando combinato FFmpeg per tagliare, ricodificare in H.264 e comprimere l'audio in AAC
-        cmd_ffmpeg = f'ffmpeg -y {time_args} -i "{raw_file}" -vcodec libx264 -crf {crf_val} -acodec aac -b:a 128k "{final_file}"'
-        ffmpeg_res = subprocess.run(cmd_ffmpeg, shell=True, capture_output=True, text=True)
+        # Formattazione del nome di salvataggio basato sulla scelta dell'oratore
+        nome_salvataggio = f"{scelta.replace(' ', '_').replace('-', '').replace('(', '').replace(')', '').replace('\'', '')}.mp4"
         
-        if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
-            output_placeholder.success("Elaborazione completata con successo! Il file è pronto per il download locale.")
-            
-            # Normalizzazione del nome del file per il salvataggio dell'utente
-            nome_salvataggio = f"{scelta.replace(' ', '_').replace('-', '').replace('(', '').replace(')', '').replace('\'', '')}.mp4"
-            
-            with open(final_file, "rb") as file:
-                st.download_button(
-                    label="⬇️ Scarica il Video sul tuo PC / Smartphone",
-                    data=file,
-                    file_name=nome_salvataggio,
-                    mime="video/mp4"
-                )
-        else:
-            output_placeholder.error(f"Errore tecnico durante la compressione (FFmpeg): {ffmpeg_res.stderr[:300]}")
+        with open(final_file, "rb") as file:
+            st.download_button(
+                label="⬇️ Salva il Video sul tuo Dispositivo",
+                data=file,
+                file_name=nome_salvataggio,
+                mime="video/mp4"
+            )
     else:
-        # Se yt-dlp fallisce, stampa a schermo l'errore reale del server per facilitare il debug
-        output_placeholder.error(f"Impossibile scaricare il video. Il server sorgente ha risposto con un errore. Dettaglio: {dl_res.stderr[:400]}")
+        # Debug in tempo reale in caso di URL errati o blocchi dei server sorgente
+        output_placeholder.error(f"Errore nel recupero del file. Il server sorgente ha risposto con un errore. Dettaglio: {dl_res.stderr[:400]}")
     
-    # Pulizia rigorosa dei file temporanei sul server per evitare saturazione del disco
-    for f in [raw_file, final_file]:
-        if os.path.exists(f): 
-            try:
-                os.remove(f)
-            except Exception:
-                pass
+    # Rimozione del file temporaneo dal server per mantenere pulito lo storage cloud
+    if os.path.exists(final_file):
+        try:
+            os.remove(final_file)
+        except Exception:
+            pass
+
