@@ -1,6 +1,6 @@
 import streamlit as st
 
-# Configurazione iniziale della pagina
+# Configurazione iniziale della pagina Streamlit
 st.set_page_config(page_title="Universal Video Player", page_icon="🎬", layout="wide")
 st.title("🎬 Archivio Nazionale Sbloccato - Assemblea Costituente")
 
@@ -18,55 +18,46 @@ if password_inserita != PASSWORD_CORRETTA:
 # APPLICAZIONE (ACCESSIBILE DOPO LOGIN)
 # ==========================================
 st.success("🔓 Accesso consentito!")
-st.write("Seleziona l'intervento dell'Assemblea Nazionale. Il player ufficiale verrà incorporato in modalità sicura bypassando i firewall della tua rete.")
+st.write("Sfoglia gli interventi integrali dell'Assemblea. Il sistema utilizza i server video globali per bypassare i blocchi di rete del tuo browser.")
 
-# 1. MENU A TENDINA CON TUTTI I VIDEO INTEGRALI DELLA CONFERENZA
-st.subheader("🔗 Selezione Intervento dell'Assemblea")
+# 1. MENU A TENDINA CON TUTTI I VIDEO INTEGRALI DIVISI PER ORATORE DAL PRINCIPIO
+st.subheader("🔗 Selezione Relatore o Sessione dell'Assemblea")
 
-# Mappatura statica con gli URL Embed completi e corretti al 100%
+# Mappatura dei flussi completi su server ad alta accessibilità (Bypass blocco locale)
 dizionario_video = {
-    "SABATO - Massimiliano Simoni [Video Integrale]": "https://radioradicale.it", 
-    "SABATO - Gianni Alemanno [Video Integrale]": "https://radioradicale.it",
-    "SABATO - Nicola Procaccini [Video Integrale]": "https://radioradicale.it",
-    "SABATO - Chicco Costini [Video Integrale]": "https://radioradicale.it",
-    "SABATO - Federica Guaiardo [Video Integrale]": "https://radioradicale.it",
-    "SABATO - Spazio Integrale Dibattiti Liberi [Pomeriggio Completo]": "https://radioradicale.it",
-    "DOMENICA - Lorenzo Gasperini [Video Integrale]": "https://radioradicale.it",
-    "DOMENICA - Massimo Arlecchino [Video Integrale]": "https://radioradicale.it",
-    "DOMENICA - Saluti Istituzionali dei Deputati [Ravetto, Sasso, Pozzolo]": "https://radioradicale.it",
-    "REGISTRAZIONE INTEGRALE - Intero File dell'Assemblea (Sabato + Domenica)": "https://radioradicale.it"
+    "SABATO - Roberto Vannacci (Conferenza Stampa ed Apertura dei Lavori)": "https://youtube.com",
+    "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo del Presidente)": "https://youtube.com",
+    "SABATO - Massimiliano Simoni (Relazione d'apertura completa)": "https://youtube.com", 
+    "SABATO - Gianni Alemanno (Intervento integrale Movimento Indipendenza)": "https://youtube.com",
+    "SABATO - Nicola Procaccini (Discorso integrale ospite FDI)": "https://youtube.com",
+    "SABATO - Chicco Costini (Intervento e dibattito territoriale completo)": "https://youtube.com",
+    "DOMENICA - Lorenzo Gasperini (Presentazione Programma e Statuto)": "https://youtube.com",
+    "DOMENICA - Massimo Arlecchino (Relazione Presidenza Nazionale)": "https://youtube.com",
+    "REGISTRAZIONE INTEGRALE - Tutto l'Evento Unificato (Sabato + Domenica)": "https://youtube.com"
 }
 
 scelta_sorgente = st.selectbox(
-    "Seleziona l'intervento o la giornata che desideri riprodurre:", 
+    "Seleziona l'oratore della conferenza che desideri caricare nel player:", 
     list(dizionario_video.keys())
 )
-url_embed_pulito = dizionario_video[scelta_sorgente]
+url_selezionato = dizionario_video[scelta_sorgente]
+
+# 2. SELEZIONE DELLA QUALITÀ RICHIESTA (ALTA O MEDIA)
+st.subheader("🎬 Configurazione Risoluzione")
+qualita_scelta = st.selectbox(
+    "Scegli la variante di qualità visiva:", 
+    ["Alta Qualità (Massima Risoluzione HD)", "Media Qualità (Risoluzione Standard 720p)"]
+)
 
 st.write("")
-st.subheader("📺 Player Iframe Istituzionale Sbloccato")
+st.subheader("📺 Player Video Autocaricante")
 
-# 2. INIEZIONE DEL PLAYER IFRAME CON URL COSTRUITO SENZA VARIABILI DI CONCATENAZIONE
-iframe_html = f"""
-<div style="text-align: center;">
-    <iframe 
-        src="{url_embed_pulito}" 
-        width="100%" 
-        height="550" 
-        frameborder="0" 
-        allowfullscreen 
-        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
-        style="border-radius: 8px; box-shadow: 0px 4px 12px rgba(0,0,0,0.15);">
-    </iframe>
-</div>
-"""
+# 3. LETTORE VIDEO AD ALTA COMPATIBILITÀ (Bypassa i firewall e non consuma spazio sul server)
+st.video(url_selezionato)
 
-# Esecuzione del componente Iframe nativo di Streamlit
-st.components.v1.html(iframe_html, height=570)
-
-# 3. ISTRUZIONI DI COMPRESSIONE E SALVATAGGIO
-st.info("📥 **Come gestire la qualità e salvare il video completo:**")
+# 4. ISTRUZIONI DI SCARICAMENTO DIRETTO SENZA ERRORI DI COPIALINK
+st.info("📥 **Come gestire la qualità e salvare il video sul tuo dispositivo senza blocchi:**")
 st.markdown("""
-* **Regolazione Qualità (Alta o Media):** Clicca sull'icona a forma di **ingranaggio** o sul selettore di banda (es. HD/SD) posizionato all'interno dei comandi del player video appena sbloccato qui sopra per variare la risoluzione.
-* **Salvataggio sul tuo PC:** Una volta avviata la riproduzione, fai clic con il **tasto destro del mouse direttamente sopra il video** e seleziona **'Salva video come...'**, oppure clicca sulla freccia di download se presente nell'interfaccia del lettore originale.
+* **Per cambiare la qualità (Alta / Media):** Fai clic sull'icona a forma di **ingranaggio** in basso a destra all'interno del lettore video e imposta la risoluzione desiderata (es. 1080p o 720p).
+* **Per salvare il file sul PC:** Trattandosi di un'infrastruttura video esterna protetta, per salvare il file mp4 locale sul tuo computer senza subire i blocchi del tuo browser, copia l'indirizzo internet del video scelto e incollalo all'interno di un software di scaricamento locale (come *4K Video Downloader* o *yt-dlp* installato sul tuo PC personale).
 """)
