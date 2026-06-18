@@ -51,18 +51,13 @@ qualita_scelta = st.selectbox("Scegli la qualità visiva del file:", ["Alta Qual
 st.write("")
 st.subheader("📥 Collegamento per lo Scaricamento Diretto")
 
-# 3. FORMATTAZIONE DEL NOME FILE PER L'UTENTE
-nome_file_pulito = scelta_sorgente.replace(' ', '_').replace('-', '_').replace('[', '').replace(']', '')
-nome_salvataggio = f"{nome_file_pulito}.mp4"
-
-# 4. IMPLEMENTAZIONE DEL GENERATORE DI COPIALINK E REDIRECT FORZATO (Bypass Lettore)
-st.info("Scegli una delle seguenti opzioni per forzare il download ed evitare il player disabilitato:")
+# 3. IMPLEMENTAZIONE DEL GENERATORE DI COPIALINK E REDIRECT (Bypass parametro errato)
+st.info("Scegli una delle seguenti opzioni per scaricare il file ed evitare i blocchi del player:")
 
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### Opzione 1: Scaricamento Forzato")
-    # Forziamo il download tramite link-button esterno con tag download
     st.link_button(
         label="🚀 Avvia Download Diretto nel Browser",
         url=url_selezionato,
@@ -71,16 +66,15 @@ with col1:
 
 with col2:
     st.markdown("### Opzione 2: Copia e Incolla la Sorgente")
-    # Se il browser blocca il clic, mostriamo l'URL diretto pulito del file binario .mp4
-    # L'utente può copiarlo e incollarlo in una nuova scheda vuota per forzare il browser a scaricarlo
+    # Sostituito 'readonly=True' con il parametro corretto 'disabled=True'
     st.text_input(
         "Se il pulsante non si attiva, copia questo link e incollalo in una nuova scheda del browser:",
         value=url_selezionato,
-        readonly=True
+        disabled=True
     )
 
 st.markdown("""
 ---
 💡 **Consiglio per il salvataggio manuale (Opzione 2):**
-Se copi il link e lo incolli in una nuova scheda, nel caso in cui il browser provi a riprodurlo, premi semplicemente la combinazione di tasti **`CTRL + S`** (su Windows) o **`CMD + S`** (su Mac) per salvare istantaneamente il file video completo sul tuo computer.
+Se copi il link e lo incolli in una nuova scheda, nel caso in cui il browser provi a riprodurre il video anziché scaricarlo, premi semplicemente la combinazione di tasti **`CTRL + S`** (su Windows) o **`CMD + S`** (su Mac) per salvarlo istantaneamente sul tuo computer.
 """)
