@@ -1,8 +1,8 @@
 import streamlit as st
 
 # Configurazione iniziale della pagina Streamlit
-st.set_page_config(page_title="Universal Video Player", page_icon="🎬", layout="wide")
-st.title("🎬 Archivio Nazionale Sbloccato - Assemblea Costituente")
+st.set_page_config(page_title="Universal Video Downloader", page_icon="🎬", layout="wide")
+st.title("🎬 Sblocco File Integrale Assemblea Nazionale")
 
 # ==========================================
 # BLOCCO DI SICUREZZA CON PASSWORD
@@ -11,53 +11,65 @@ PASSWORD_CORRETTA = "Futuro2026"
 password_inserita = st.text_input("Inserisci la password di sicurezza per accedere al pannello:", type="password")
 
 if password_inserita != PASSWORD_CORRETTA:
-    st.warning("🔒 Accesso limitato. Inserisci la password corretta per sbloccare le funzioni di visualizzazione.")
+    st.warning("🔒 Accesso limitato. Inserisci la password corretta per sbloccare le funzioni di download.")
     st.stop()
 
 # ==========================================
 # APPLICAZIONE (ACCESSIBILE DOPO LOGIN)
 # ==========================================
 st.success("🔓 Accesso consentito!")
-st.write("Sfoglia gli interventi integrali dell'Assemblea. Il sistema utilizza i server video globali per bypassare i blocchi di rete del tuo browser.")
+st.write("Seleziona l'intervento dell'Assemblea Nazionale per generare la stringa di sblocco immediato.")
 
-# 1. MENU A TENDINA CON TUTTI I VIDEO INTEGRALI DIVISI PER ORATORE DAL PRINCIPIO
-st.subheader("🔗 Selezione Relatore o Sessione dell'Assemblea")
+# 1. MENU A TENDINA CON TUTTI I VIDEO INTEGRALI DELLA CONFERENZA
+st.subheader("🔗 Selezione Intervento dell'Assemblea")
 
-# Mappatura dei flussi completi su server ad alta accessibilità (Bypass blocco locale)
 dizionario_video = {
-    "SABATO - Roberto Vannacci (Conferenza Stampa ed Apertura dei Lavori)": "https://youtube.com",
-    "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo del Presidente)": "https://youtube.com",
-    "SABATO - Massimiliano Simoni (Relazione d'apertura completa)": "https://youtube.com", 
-    "SABATO - Gianni Alemanno (Intervento integrale Movimento Indipendenza)": "https://youtube.com",
-    "SABATO - Nicola Procaccini (Discorso integrale ospite FDI)": "https://youtube.com",
-    "SABATO - Chicco Costini (Intervento e dibattito territoriale completo)": "https://youtube.com",
-    "DOMENICA - Lorenzo Gasperini (Presentazione Programma e Statuto)": "https://youtube.com",
-    "DOMENICA - Massimo Arlecchino (Relazione Presidenza Nazionale)": "https://youtube.com",
-    "REGISTRAZIONE INTEGRALE - Tutto l'Evento Unificato (Sabato + Domenica)": "https://youtube.com"
+    "SABATO - Massimiliano Simoni [Video Integrale]": "https://radioradicale.it", 
+    "SABATO - Gianni Alemanno [Video Integrale]": "https://radioradicale.it",
+    "SABATO - Nicola Procaccini [Video Integrale]": "https://radioradicale.it",
+    "SABATO - Chicco Costini [Video Integrale]": "https://radioradicale.it",
+    "SABATO - Federica Guaiardo [Video Integrale]": "https://radioradicale.it",
+    "SABATO - Spazio Integrale Dibattiti Liberi [Pomeriggio Completo]": "https://radioradicale.it",
+    "DOMENICA - Lorenzo Gasperini [Video Integrale]": "https://radioradicale.it",
+    "DOMENICA - Massimo Arlecchino [Video Integrale]": "https://radioradicale.it",
+    "DOMENICA - Saluti Istituzionali dei Deputati [Ravetto, Sasso, Pozzolo]": "https://radioradicale.it",
+    "REGISTRAZIONE INTEGRALE - Intero File dell'Assemblea (Sabato + Domenica)": "https://radioradicale.it",
+    "SABATO - Roberto Vannacci (Conferenza Stampa - YouTube)": "https://youtube.com",
+    "DOMENICA - Roberto Vannacci (Discorso Conclusivo - YouTube)": "https://youtube.com"
 }
 
 scelta_sorgente = st.selectbox(
-    "Seleziona l'oratore della conferenza che desideri caricare nel player:", 
+    "Seleziona l'intervento o la giornata che desideri salvare:", 
     list(dizionario_video.keys())
 )
-url_selezionato = dizionario_video[scelta_sorgente]
+url_video_originale = dizionario_video[scelta_sorgente]
 
-# 2. SELEZIONE DELLA QUALITÀ RICHIESTA (ALTA O MEDIA)
-st.subheader("🎬 Configurazione Risoluzione")
+# 2. SELEZIONE FISSA DELLA QUALITÀ CON ALTA E MEDIA
+st.subheader("🎬 Configurazione Qualità")
 qualita_scelta = st.selectbox(
-    "Scegli la variante di qualità visiva:", 
-    ["Alta Qualità (Massima Risoluzione HD)", "Media Qualità (Risoluzione Standard 720p)"]
+    "Scegli il livello di qualità del file finale:", 
+    ["Alta Qualità (Massima originale nativa)", "Media Qualità (720p Compresso ottimizzato)"]
 )
 
 st.write("")
-st.subheader("📺 Player Video Autocaricante")
+st.subheader("🚀 Pannello di Sblocco Comando Locale")
 
-# 3. LETTORE VIDEO AD ALTA COMPATIBILITÀ (Bypassa i firewall e non consuma spazio sul server)
-st.video(url_selezionato)
+# Formattazione del nome file per il salvataggio
+nome_file_pulito = scelta_sorgente.replace(' ', '_').replace('-', '_').replace('[', '').replace(']', '')
+nome_salvataggio = f"{nome_file_pulito}.mp4"
 
-# 4. ISTRUZIONI DI SCARICAMENTO DIRETTO SENZA ERRORI DI COPIALINK
-st.info("📥 **Come gestire la qualità e salvare il video sul tuo dispositivo senza blocchi:**")
-st.markdown("""
-* **Per cambiare la qualità (Alta / Media):** Fai clic sull'icona a forma di **ingranaggio** in basso a destra all'interno del lettore video e imposta la risoluzione desiderata (es. 1080p o 720p).
-* **Per salvare il file sul PC:** Trattandosi di un'infrastruttura video esterna protetta, per salvare il file mp4 locale sul tuo computer senza subire i blocchi del tuo browser, copia l'indirizzo internet del video scelto e incollalo all'interno di un software di scaricamento locale (come *4K Video Downloader* o *yt-dlp* installato sul tuo PC personale).
+# 3. GENERAZIONE DEL COMANDO DI SCARICAMENTO UNIVERSALE AUTOMATICO (FFMPEG NATIVO)
+if "Alta" in qualita_scelta:
+    comando_generato = f'ffmpeg -y -user_agent "Mozilla/5.0" -i "{url_video_originale}" -c copy {nome_salvataggio}'
+else:
+    comando_generato = f'ffmpeg -y -user_agent "Mozilla/5.0" -i "{url_video_originale}" -vf "scale=-2:720" -vcodec libx264 -crf 24 -acodec aac {nome_salvataggio}'
+
+st.info("💡 **Istruzioni per scaricare il file in 5 secondi senza passare dal browser o dal server:**")
+st.markdown(f"""
+1. Fai clic sul pulsante in alto a destra nel riquadro grigio qui sotto per **copiare il comando preconfigurato**.
+2. Apri il **Terminale** (o il *Prompt dei comandi*) sul tuo computer personale.
+3. Incolla il testo copiato e premi **Invio**: il tuo PC avvierà il download diretto alla massima velocità, salvando il file video integro nella cartella corrente.
 """)
+
+# Mostra il comando pronto per essere copiato in un clic con il tasto nativo di Streamlit
+st.code(comando_generato, language="bash")
