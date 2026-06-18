@@ -21,112 +21,79 @@ if password_inserita != PASSWORD_CORRETTA:
 # APPLICAZIONE (ACCESSIBILE DOPO LOGIN)
 # ==========================================
 st.success("🔓 Accesso consentito!")
-st.write("Seleziona l'oratore e decidi la risoluzione del video prima di avviare il download.")
+st.write("Seleziona l'oratore per scaricare ed estrarre il suo intervento video originale.")
 
-# L'unico URL reale e supportato dall'estrattore per l'evento di Radio Radicale
-URL_SORGENTE_UFFICIALE = "https://radioradicale.it"
+# LINK DIRETTI AI FLUSSI STREAMING (Sostituisci questi URL con i file .mp4 o .m3u8 reali del server video)
+STREAM_DIRETTO_SABATO = "https://radioradicale.it"
+STREAM_DIRETTO_DOMENICA = "https://radioradicale.it"
 
-# Mappatura: ciascun oratore punta alla sorgente corretta con il suo rispettivo minutaggio nativo completo
+# Mappatura: ciascun oratore punta al file di streaming video reale con il suo minutaggio nativo completo
 elenco_completo = {
-    "SESSIONE COMPLETA - Sabato 13 Giugno (Registrazione Integrale)": {"url": URL_SORGENTE_UFFICIALE, "start": None, "end": None},
+    "SESSIONE COMPLETA - Sabato 13 Giugno (Registrazione Integrale)": {"stream_url": STREAM_DIRETTO_SABATO, "start": None, "end": None},
     
     # --- ORATORI ED INTERVENTI SABATO 13 GIUGNO ---
-    "SABATO - Massimiliano Simoni (Relazione d'apertura completa)": {"url": URL_SORGENTE_UFFICIALE, "start": "00:02:00", "end": "00:28:00"}, 
-    "SABATO - Roberto Vannacci (Conferenza Stampa ed Apertura dei Lavori)": {"url": URL_SORGENTE_UFFICIALE, "start": "00:28:30", "end": "01:15:00"},
-    "SABATO - Gianni Alemanno (Intervento integrale Movimento Indipendenza)": {"url": URL_SORGENTE_UFFICIALE, "start": "01:16:00", "end": "01:45:00"},
-    "SABATO - Nicola Procaccini (Discorso integrale ospite FDI)": {"url": URL_SORGENTE_UFFICIALE, "start": "01:46:15", "end": "02:10:00"},
-    "SABATO - Chicco Costini (Intervento e dibattito territoriale completo)": {"url": URL_SORGENTE_UFFICIALE, "start": "02:11:00", "end": "02:35:00"},
-    "SABATO - Federica Guaiardo (Intervento delegazione Catania completo)": {"url": URL_SORGENTE_UFFICIALE, "start": "02:36:00", "end": "02:55:00"},
-    "SABATO - Spazio Integrale Dibattiti Liberi (Tutti i Delegati del Pomeriggio)": {"url": URL_SORGENTE_UFFICIALE, "start": "03:00:00", "end": "09:00:00"},
+    "SABATO - Massimiliano Simoni (Relazione d'apertura completa)": {"stream_url": STREAM_DIRETTO_SABATO, "start": "00:02:00", "end": "00:28:00"}, 
+    "SABATO - Roberto Vannacci (Conferenza Stampa ed Apertura dei Lavori)": {"stream_url": STREAM_DIRETTO_SABATO, "start": "00:28:30", "end": "01:15:00"},
+    "SABATO - Gianni Alemanno (Intervento integrale Movimento Indipendenza)": {"stream_url": STREAM_DIRETTO_SABATO, "start": "01:16:00", "end": "01:45:00"},
+    "SABATO - Nicola Procaccini (Discorso integrale ospite FDI)": {"stream_url": STREAM_DIRETTO_SABATO, "start": "01:46:15", "end": "02:10:00"},
+    "SABATO - Chicco Costini (Intervento e dibattito territoriale completo)": {"stream_url": STREAM_DIRETTO_SABATO, "start": "02:11:00", "end": "02:35:00"},
+    "SABATO - Federica Guaiardo (Intervento delegazione Catania completo)": {"stream_url": STREAM_DIRETTO_SABATO, "start": "02:36:00", "end": "02:55:00"},
+    "SABATO - Spazio Integrale Dibattiti Liberi (Tutti i Delegati del Pomeriggio)": {"stream_url": STREAM_DIRETTO_SABATO, "start": "03:00:00", "end": "09:00:00"},
     
     # --- ORATORI ED INTERVENTI DOMENICA 14 GIUGNO ---
-    "DOMENICA - Lorenzo Gasperini (Presentazione Programma e Mozione Nazionale)": {"url": URL_SORGENTE_UFFICIALE, "start": "09:01:00", "end": "09:40:00"},
-    "DOMENICA - Massimo Arlecchino (Relazione Presidenza Nazionale)": {"url": URL_SORGENTE_UFFICIALE, "start": "09:41:15", "end": "10:10:00"},
-    "DOMENICA - Laura Ravetto (Saluti Istituzionali completi)": {"url": URL_SORGENTE_UFFICIALE, "start": "10:11:00", "end": "10:35:00"},
-    "DOMENICA - Rossano Sasso (Intervento integrale Scuola e Cultura)": {"url": URL_SORGENTE_UFFICIALE, "start": "10:36:00", "end": "11:00:00"},
-    "DOMENICA - Emanuele Pozzolo (Intervento Politico completo)": {"url": URL_SORGENTE_UFFICIALE, "start": "11:01:10", "end": "11:25:00"},
-    "DOMENICA - Stefano Valdegamberi (Discorso Autonomie e Territorio Veneto)": {"url": URL_SORGENTE_UFFICIALE, "start": "11:26:00", "end": "11:50:00"},
-    "DOMENICA - Sessione Integrale Approvazione Statuto e Votazione Organi": {"url": URL_SORGENTE_UFFICIALE, "start": "11:51:00", "end": "12:30:00"},
-    "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo del Presidente)": {"url": URL_SORGENTE_UFFICIALE, "start": "12:31:00", "end": "13:30:00"},
+    "DOMENICA - Lorenzo Gasperini (Presentazione Programma e Mozione Nazionale)": {"stream_url": STREAM_DIRETTO_DOMENICA, "start": "09:01:00", "end": "09:40:00"},
+    "DOMENICA - Massimo Arlecchino (Relazione Presidenza Nazionale)": {"stream_url": STREAM_DIRETTO_DOMENICA, "start": "09:41:15", "end": "10:10:00"},
+    "DOMENICA - Laura Ravetto (Saluti Istituzionali completi)": {"stream_url": STREAM_DIRETTO_DOMENICA, "start": "10:11:00", "end": "10:35:00"},
+    "DOMENICA - Rossano Sasso (Intervento integrale Scuola e Cultura)": {"stream_url": STREAM_DIRETTO_DOMENICA, "start": "10:36:00", "end": "11:00:00"},
+    "DOMENICA - Emanuele Pozzolo (Intervento Politico completo)": {"stream_url": STREAM_DIRETTO_DOMENICA, "start": "11:01:10", "end": "11:25:00"},
+    "DOMENICA - Stefano Valdegamberi (Discorso Autonomie e Territorio Veneto)": {"stream_url": STREAM_DIRETTO_DOMENICA, "start": "11:26:00", "end": "11:50:00"},
+    "DOMENICA - Sessione Integrale Approvazione Statuto e Votazione Organi": {"stream_url": STREAM_DIRETTO_DOMENICA, "start": "11:51:00", "end": "12:30:00"},
+    "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo del Presidente)": {"stream_url": STREAM_DIRETTO_DOMENICA, "start": "12:31:00", "end": "13:30:00"},
 }
 
 # 1. Interfaccia di Selezione del video
-scelta = st.selectbox("1. Seleziona l'oratore o la sessione:", list(elenco_completo.keys()))
+scelta = st.selectbox("Seleziona l'oratore o la sessione:", list(elenco_completo.keys()))
 video_info = elenco_completo[scelta]
-
-# 2. Interfaccia di Selezione della Qualità
-qualita_scelta = st.selectbox(
-    "2. Seleziona la qualità del video:",
-    [
-        "Massima Qualità Disponibile (Risoluzione originale)",
-        "Alta Qualità (Fino a 1080p)",
-        "Qualità Standard (Fino a 720p)",
-        "Qualità Bassa (Fino a 480p)",
-        "Qualità Minima (Fino a 360p)"
-    ]
-)
-
-# Definizione dei selettori di formato compatibili
-if "Massima" in qualita_scelta:
-    format_arg = "best"
-elif "1080p" in qualita_scelta:
-    format_arg = "best[height<=1080]"
-elif "720p" in qualita_scelta:
-    format_arg = "best[height<=720]"
-elif "480p" in qualita_scelta:
-    format_arg = "best[height<=480]"
-else:
-    format_arg = "best[height<=360]"
 
 output_placeholder = st.empty()
 
-# 3. Pulsante per avviare il Download
+# 2. Pulsante per avviare il Download
 if st.button("Scarica e Genera File Video 🚀"):
-    output_placeholder.warning("Connessione ai server di Radio Radicale e download dello stream in corso...")
+    output_placeholder.warning("Connessione al server video in corso... Download dell'intervento avviato.")
     
     session_id = str(uuid.uuid4())[:8]
-    raw_file = f"raw_{session_id}.mp4"
     final_file = f"video_{session_id}.mp4"
     
-    # Estrazione dell'URL dello stream diretto tramite yt-dlp per evitare blocchi e analizzare l'indirizzo reale
-    cmd_url = f'yt-dlp -f "{format_arg}" --get-url --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "{video_info["url"]}"'
-    url_res = subprocess.run(cmd_url, shell=True, capture_output=True, text=True)
-    
-    if url_res.returncode == 0 and url_res.stdout.strip():
-        stream_url = url_res.stdout.strip().split('\n')[0] # Prende il primo stream video/audio unificato valido
-        
-        output_placeholder.warning("Generazione del file video in corso sul server... Attendi.")
-        
-        # Gestione del ritaglio temporale direttamente tramite FFmpeg nativo per evitare conflitti di URL esterni
-        if video_info["start"] and video_info["end"]:
-            cmd_ffmpeg = f'ffmpeg -y -ss {video_info["start"]} -to {video_info["end"]} -i "{stream_url}" -c copy "{final_file}"'
-        else:
-            cmd_ffmpeg = f'ffmpeg -y -i "{stream_url}" -c copy "{final_file}"'
-            
-        ffmpeg_res = subprocess.run(cmd_ffmpeg, shell=True, capture_output=True, text=True)
-        
-        if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
-            output_placeholder.success("Il file video dell'oratore è pronto per il salvataggio!")
-            
-            # Normalizzazione del nome file
-            nome_salvataggio = f"{scelta.replace(' ', '_').replace('-', '').replace('(', '').replace(')', '').replace('\'', '')}.mp4"
-            
-            with open(final_file, "rb") as file:
-                st.download_button(
-                    label="⬇️ Salva il Video sul tuo Dispositivo",
-                    data=file,
-                    file_name=nome_salvataggio,
-                    mime="video/mp4"
-                )
-        else:
-            output_placeholder.error(f"Errore durante la scrittura del file video. Log tecnico: {ffmpeg_res.stderr[:300]}")
+    # Costruzione del comando FFmpeg nativo (Legge il flusso video diretto senza usare yt-dlp)
+    if video_info["start"] and video_info["end"]:
+        # Taglia lo spezzone copiando i codec originali (velocissimo, zero consumo di memoria e CPU)
+        cmd_ffmpeg = f'ffmpeg -y -ss {video_info["start"]} -to {video_info["end"]} -i "{video_info["stream_url"]}" -c copy -bsf:a aac_adtstoasc "{final_file}"'
     else:
-        output_placeholder.error(f"Impossibile connettersi a Radio Radicale. Dettaglio: {url_res.stderr[:300]}")
+        # Scarica il file video intero così com'è
+        cmd_ffmpeg = f'ffmpeg -y -i "{video_info["stream_url"]}" -c copy -bsf:a aac_adtstoasc "{final_file}"'
+        
+    # Esecuzione dell'estrazione multimediale
+    ffmpeg_res = subprocess.run(cmd_ffmpeg, shell=True, capture_output=True, text=True)
     
-    # Pulizia rigorosa dello storage temporaneo
-    for f in [raw_file, final_file]:
-        if os.path.exists(f):
-            try:
-                os.remove(f)
-            except Exception:
-                pass
+    if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
+        output_placeholder.success("Il file video dell'oratore è pronto per il salvataggio!")
+        
+        # Pulizia del nome per il salvataggio sul PC dell'utente
+        nome_salvataggio = f"{scelta.replace(' ', '_').replace('-', '').replace('(', '').replace(')', '').replace('\'', '')}.mp4"
+        
+        with open(final_file, "rb") as file:
+            st.download_button(
+                label="⬇️ Salva il Video sul tuo Dispositivo",
+                data=file,
+                file_name=nome_salvataggio,
+                mime="video/mp4"
+            )
+    else:
+        output_placeholder.error(f"Impossibile estrarre il video. Verifica che il link di streaming sia online. Log tecnico: {ffmpeg_res.stderr[:350]}")
+    
+    # Rimozione immediata del file temporaneo locale
+    if os.path.exists(final_file):
+        try:
+            os.remove(final_file)
+        except Exception:
+            pass
