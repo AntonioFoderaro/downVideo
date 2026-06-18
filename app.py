@@ -19,7 +19,7 @@ if password_inserita != PASSWORD_CORRETTA:
 # APPLICAZIONE (ACCESSIBILE DOPO LOGIN)
 # ==========================================
 st.success("🔓 Accesso consentito!")
-st.write("Seleziona l'intervento dell'Assemblea Nazionale. Il server cloud scaricherà e sbloccherà il flusso video in tempo reale per te.")
+st.write("Seleziona l'intervento dell'Assemblea Nazionale. Il server cloud scaricherà e sbloccherà il flusso video in memoria per te.")
 
 # 1. MENU A TENDINA CON TUTTI I VIDEO INTEGRALI DELLA CONFERENZA
 st.subheader("🔗 Selezione Intervento dell'Assemblea")
@@ -51,34 +51,42 @@ qualita_scelta = st.selectbox(
 )
 
 st.write("")
-st.subheader("🚀 Pannello di Scaricamento Tunnel Cloud")
+st.subheader("🚀 Scaricamento e Sblocco tramite Tunnel RAM")
 
 # Generazione di un nome file pulito per il salvataggio locale dell'utente
 nome_file_pulito = scelta_sorgente.replace(' ', '_').replace('-', '_').replace('[', '').replace(']', '')
 nome_salvataggio = f"{nome_file_pulito}.mp4"
 
-# 3. CREAZIONE DELLA FUNZIONE GENERATRICE DI CHUNK (STREAM DIRETTO AL BROWSER)
-def genera_video_stream(url_target):
+# 3. SCARICAMENTO DIRETTO NELLA RAM VOLATILE DEL SERVER (ZERO DISCO UTILIZZATO)
+@st.cache_data(show_spinner=False)
+def scarica_video_in_ram(url_target):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
-    # Chiede al server remoto di inviare i dati in modalità streaming aperto
-    with requests.get(url_target, headers=headers, stream=True) as response:
-        response.raise_for_status()
-        # Invia i blocchi da 1 MB ciascuno direttamente al browser dell'utente in tempo reale
-        for chunk in response.iter_content(chunk_size=1024 * 1024):
-            if chunk:
-                yield chunk
+    # Il server cloud scarica i dati binari direttamente nella cache RAM volatile
+    response = requests.get(url_target, headers=headers, timeout=120)
+    response.raise_for_status()
+    return response.content
 
-# 4. BOTTONE DI DOWNLOAD DIRETTO SBLOCCATO DAL SERVER CLOUD
-# Utilizzando una funzione generatrice (generator) agganciata al parametro data, 
-# Streamlit non salva nulla in RAM o sul disco fisso: scarica e consegna direttamente i pacchetti al browser
-st.download_button(
-    label=f"⬇️ Salva il Video Integrale: {scelta_sorgente}",
-    data=genera_video_stream(url_video_originale),
-    file_name=nome_salvataggio,
-    mime="video/mp4",
-    use_container_width=True
-)
+try:
+    # Pulsante o processo di attivazione dello sblocco
+    if st.button("🔄 Clicca qui per sbloccare e preparare il file video"):
+        with st.spinner("🔓 Il server cloud si sta collegando alla sorgente protetta... Download in RAM in corso..."):
+            bytes_video = scarica_video_in_ram(url_video_originale)
+        
+        if bytes_video and len(bytes_video) > 0:
+            st.success("🎉 Sblocco completato con successo! Il file è pronto in memoria.")
+            
+            # 4. BOTTONE DI DOWNLOAD REALE ACCETTA SOLO STRINGHE DI BYTES VALIDE
+            st.download_button(
+                label=f"⬇️ Salva il Video sul tuo PC / Smartphone",
+                data=bytes_video,
+                file_name=nome_salvataggio,
+                mime="video/mp4",
+                use_container_width=True
+            )
+        else:
+            st.error("Il file scaricato dal server risulta vuoto (0 byte). Riprova.")
 
-st.info("💡 **Perché questo sistema funziona:** Cliccando sul pulsante sopra, il server cloud si collegherà a Radio Radicale al posto tuo e trasferirà i dati direttamente dentro la tua cartella Download, mascherando il sito bloccato dal tuo firewall.")
+except Exception as e:
+    st.error(f"Impossibile completare il tunnel di sblocco in RAM. Dettaglio: {str(e)}")
