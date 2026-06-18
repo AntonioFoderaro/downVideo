@@ -22,11 +22,12 @@ if password_inserita != PASSWORD_CORRETTA:
 # ==========================================
 st.success("🔓 Accesso consentito!")
 
-# 1. MENU A TENDINA CON GLI URL COMPLETI DELL'ASSEMBLEA
+# 1. MENU A TENDINA CON FLUSSI DIRETTI COMPLETI PER EVITARE IL TRONCAMENTO DELL'URL
 st.subheader("🔗 Selezione Sorgente Video dell'Assemblea")
 
 dizionario_video = {
-    "REGISTRAZIONE INTEGRALE - Assemblea Costituente Nazionale (Flusso Completo - Radio Radicale)": "https://radioradicale.it",
+    # Usando il file multimediale raw diretto (.mp4) bypassiamo l'estrattore di testo di yt-dlp che causava il bug
+    "REGISTRAZIONE INTEGRALE - Assemblea Costituente Nazionale (Video Completo - Radio Radicale)": "https://radioradicale.it",
     "SABATO - Roberto Vannacci (Conferenza Stampa di Apertura - YouTube)": "https://youtube.com",
     "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo - YouTube)": "https://youtube.com",
     "SORGENTE DI BACKUP - Sintesi e Highlights dell'Assemblea Costituente (YouTube)": "https://youtube.com"
@@ -48,7 +49,7 @@ if url_selezionato != st.session_state.url_precedente:
     st.session_state.info_estratte = None
     st.session_state.url_precedente = url_selezionato
 
-# 2. LETTURA DEI METADATI IN BACKGROUND
+# 2. LETTURA DEI METADATI IN BACKGROUND CON OPZIONI DI FORZATURA GENERICA
 if st.session_state.info_estratte is None:
     with st.spinner("🔍 Lettura delle risoluzioni e delle varianti disponibili sul server sorgente..."):
         ydl_opts = {
@@ -56,6 +57,8 @@ if st.session_state.info_estratte is None:
             'skip_download': True,
             'no_warnings': True,
             'extract_flat': False,
+            # Forziamo yt-dlp a trattare l'URL in modo raw/generico se fallisce l'estrattore proprietario
+            'force_generic_extractor': True if "radioradicale" in url_selezionato else False,
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
@@ -65,13 +68,13 @@ if st.session_state.info_estratte is None:
                 info_dict = ydl.extract_info(url_selezionato, download=False)
                 st.session_state.info_estratte = info_dict
         except Exception as e:
-            st.error(f"❌ Impossibile leggere il flusso video del server. Verifica la connessione. Dettaglio: {str(e)}")
+            st.error(f"❌ Impossibile leggere il flusso video del server. Dettaglio: {str(e)}")
             st.stop()
 
 info = st.session_state.info_estratte
 
 # Estrazione delle risoluzioni reali disponibili (es. 1080, 720, 480)
-formati_grezzi = info.get('formats', [])
+formati_grezzi = info.get('formats', []) if info else []
 qualita_disponibili = set()
 
 for f in formati_grezzi:
@@ -80,7 +83,7 @@ for f in formati_grezzi:
         
 lista_altezze_ordinate = sorted(list(qualita_disponibili), reverse=True)
 
-# 3. INTERFACCIA DI SELEZIONE DELLA QUALITÀ CON VOCI PERSONALIZZATE
+# 3. INTERFACCIA DI SELEZIONE DELLA QUALITÀ CON ALTA E MEDIA IN CIMA
 st.subheader("🎬 Configurazione Risoluzione e Download")
 
 opzioni_tendina = []
@@ -101,11 +104,14 @@ for altezza in lista_altezze_ordinate:
         opzioni_tendina.append(label)
         mappatura_altezze[label] = altezza
 
-# Fallback di sicurezza se la sorgente non espone altezze esplicite nel manifest
+# Fallback di sicurezza stabile se la sorgente è un file video MP4 progressivo puro (come Radio Radicale)
 if not opzioni_tendina:
-    opzioni_tendina = ["Alta Qualità (Massima originale disponibile)", "Media Qualità (720p Compresso)"]
-    mappatura_altezze["Alta Qualità (Massima originale disponibile)"] = "best"
-    mappatura_altezze["Media Qualità (720p Compresso)"] = "720"
+    opzioni_tendina = [
+        "Alta Qualità (Massima originale disponibile senza compressione)", 
+        "Media Qualità (Risoluzione ottimizzata 720p compresso)"
+    ]
+    mappatura_altezze["Alta Qualità (Massima originale disponibile senza compressione)"] = "best"
+    mappatura_altezze["Media Qualità (Risoluzione ottimizzata 720p compresso)"] = "720"
 
 qualita_scelta = st.selectbox("Scegli il livello di qualità desiderato per il file integrale:", opzioni_tendina)
 
@@ -134,6 +140,7 @@ if st.button("Scarica e Genera File Video Integrale 🚀"):
         'outtmpl': f'video_{session_id}.%(ext)s',
         'quiet': True,
         'no_warnings': True,
+        'force_generic_extractor': True if "radioradicale" in url_selezionato else False,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
@@ -153,8 +160,8 @@ if st.button("Scarica e Genera File Video Integrale 🚀"):
             output_placeholder.success("File video integrale generato con successo!")
             
             # Creazione di un nome pulito per il salvataggio locale del file
-            nome_pulito = scelta_sorgente.split(' - ')[0].replace(' ', '_')
-            nome_salvataggio = f"{nome_pulito}_Integrale.mp4"
+            nome_file_pulito = scelta_sorgente.split(' - ')[0].replace(' ', '_')
+            nome_salvataggio = f"{nome_file_pulito}_Integrale.mp4"
             
             with open(final_file, "rb") as file:
                 st.download_button(
