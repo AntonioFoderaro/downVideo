@@ -1,6 +1,7 @@
 import streamlit as st
 import os
-import yt_dlp
+import urllib.request
+import subprocess
 import uuid
 
 # Configurazione della pagina Streamlit
@@ -22,11 +23,10 @@ if password_inserita != PASSWORD_CORRETTA:
 # ==========================================
 st.success("🔓 Accesso consentito!")
 
-# 1. TENDINA CON TUTTI I VIDEO INTEGRALI ESTRATTI DA RADIO RADICALE E YOUTUBE
+# 1. MENU A TENDINA CON TUTTI I FLUSSI INTERI DIRETTI (.MP4) SENZA SPEZZONI
 st.subheader("🔗 Selezione Intervento dell'Assemblea Nazionale")
 
 dizionario_video = {
-    # --- INTERVENTI DA RADIO RADICALE (STREAMING DIRETTI .MP4 COMPLETI) ---
     "SABATO - Massimiliano Simoni (Relazione d'apertura completa)": "https://radioradicale.it", 
     "SABATO - Gianni Alemanno (Intervento integrale Movimento Indipendenza)": "https://radioradicale.it",
     "SABATO - Nicola Procaccini (Discorso integrale ospite FDI)": "https://radioradicale.it",
@@ -37,11 +37,8 @@ dizionario_video = {
     "DOMENICA - Massimo Arlecchino (Relazione Presidenza Nazionale)": "https://radioradicale.it",
     "DOMENICA - Saluti Istituzionali dei Deputati (Ravetto, Sasso, Pozzolo)": "https://radioradicale.it",
     "REGISTRAZIONE INTEGRALE - Sabato + Domenica (File Unificato Radio Radicale)": "https://radioradicale.it",
-    
-    # --- INTERVENTI DA YOUTUBE (STREAMING COMPLETI) ---
-    "SABATO - Roberto Vannacci (Conferenza Stampa ed Apertura dei Lavori)": "https://youtube.com",
-    "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo del Presidente)": "https://youtube.com",
-    "SORGENTE DI BACKUP - Sintesi e Highlights dell'Assemblea Costituente": "https://youtube.com"
+    "SABATO - Roberto Vannacci (Conferenza Stampa - Link di Backup Alternativo)": "https://radioradicale.it",
+    "DOMENICA - Roberto Vannacci (Discorso Conclusivo - Link di Backup Alternativo)": "https://radioradicale.it"
 }
 
 scelta_sorgente = st.selectbox(
@@ -50,66 +47,84 @@ scelta_sorgente = st.selectbox(
 )
 url_selezionato = dizionario_video[scelta_sorgente]
 
-# 2. SELEZIONE DELLA QUALITÀ (CON ALTA E MEDIA)
+# 2. SELEZIONE FISSA DELLA QUALITÀ (ALTA, MEDIA, BASSA)
 st.subheader("🎬 Configurazione Risoluzione e Qualità Video")
 
 qualita_scelta = st.selectbox(
     "Scegli il livello di qualità desiderato per il file finale:",
     [
-        "Alta Qualità (Massima risoluzione originale senza compressione)",
-        "Media Qualità (Risoluzione ottimizzata in 720p - Consigliata per PC)",
-        "Qualità Standard (Risoluzione bilanciata in 480p per Smartphone)",
-        "Bassa Qualità (Risoluzione compressa a 360p - Minimo peso)"
+        "Alta Qualità (Massima risoluzione originale del file nativo)",
+        "Media Qualità (Risoluzione bilanciata ottimizzata in 720p)",
+        "Bassa Qualità (Risoluzione compressa a 480p per Smartphone)"
     ]
 )
-
-# Mappatura dei parametri di filtraggio altezza per yt-dlp
-if "Alta" in qualita_scelta:
-    stringa_formato = "bestvideo+bestaudio/best"
-elif "Media" in qualita_scelta:
-    stringa_formato = "bestvideo[height<=720]+bestaudio/best[height<=720]"
-elif "Standard" in qualita_scelta:
-    stringa_formato = "bestvideo[height<=480]+bestaudio/best[height<=480]"
-else:
-    stringa_formato = "bestvideo[height<=360]+bestaudio/best[height<=360]"
 
 output_placeholder = st.empty()
 
 # 3. PULSANTE DI SCARICAMENTO DEL VIDEO INTEGRALE
 if st.button("Scarica e Genera File Video Integrale 🚀"):
-    output_placeholder.warning("Connessione ai server cloud e download del file multimediale avviato... Attendi.")
-    
     session_id = str(uuid.uuid4())[:8]
+    raw_file = f"raw_{session_id}.mp4"
     final_file = f"video_{session_id}.mp4"
     
-    # Opzioni di download stabili per gestire flussi MP4 diretti ed evitare blocchi
-    ydl_opts_dl = {
-        'format': stringa_formato,
-        'merge_output_format': 'mp4',
-        'outtmpl': f'video_{session_id}.%(ext)s',
-        'quiet': True,
-        'no_warnings': True,
-        # Esclude gli estrattori di testo automatici se rileva un link di Radio Radicale
-        'force_generic_extractor': True if "radioradicale" in url_selezionato else False,
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-    }
-    
     try:
-        with yt_dlp.YoutubeDL(ydl_opts_dl) as ydl:
-            ydl.download([url_selezionato])
+        # Definizione della barra di avanzamento e dei messaggi nello stato grafico
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        # Funzione di tracciamento dei blocchi di byte scaricati per animare la barra
+        def hook_avanzamento(blocco_count, blocco_size, totale_size):
+            if totale_size > 0:
+                percentuale = min(int(blocco_count * blocco_size * 100 / totale_size), 100)
+                progress_bar.progress(percentuale / 100)
+                status_text.text(f"📥 Download dello stream originale in corso: {percentuale}% completato...")
+        
+        # Creazione della richiesta HTTP con User-Agent per evitare qualsiasi blocco di sicurezza dei server
+        richiesta = urllib.request.Request(
+            url_selezionato, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        )
+        
+        # Download lineare del file binario MP4 nativo sul disco del server
+        with urllib.request.urlopen(richiesta) as response, open(raw_file, 'wb') as out_file:
+            totale_dimensione = int(response.info().get('Content-Length', 0))
+            blocco_dimensione = 1024 * 256
+            conteggio_blocchi = 0
             
-        # Normalizzazione del formato in caso di elaborazioni MKV in background
-        if os.path.exists(f"video_{session_id}.mp4"):
-            final_file = f"video_{session_id}.mp4"
-        elif os.path.exists(f"video_{session_id}.mkv"):
-            os.rename(f"video_{session_id}.mkv", f"video_{session_id}.mp4")
+            while True:
+                buffer = response.read(blocco_dimensione)
+                if not buffer:
+                    break
+                conteggio_blocchi += 1
+                out_file.write(buffer)
+                hook_avanzamento(conteggio_blocchi, blocco_dimensione, totale_dimensione)
+                
+        status_text.text("⚙️ Ottimizzazione della risoluzione e del formato video richiesto...")
+        
+        # 4. GESTIONE DELLA QUALITÀ TRAMITE FFMPEG LOCALE (Alta, Media, Bassa)
+        if "Alta" in qualita_scelta:
+            # Sposta l'indice in cima (faststart) senza toccare la CPU, mantenendo la qualità originale massima
+            cmd_ffmpeg = f'ffmpeg -y -i "{raw_file}" -c copy -movflags faststart "{final_file}"'
+        elif "Media" in qualita_scelta:
+            # Applica una compressione ed effettua il ridimensionamento a 720p di altezza
+            cmd_ffmpeg = f'ffmpeg -y -i "{raw_file}" -vf "scale=-2:720" -vcodec libx264 -crf 26 -acodec aac -b:a 128k -movflags faststart "{final_file}"'
+        else:
+            # Comprime in 480p per generare un file super leggero
+            cmd_ffmpeg = f'ffmpeg -y -i "{raw_file}" -vf "scale=-2:480" -vcodec libx264 -crf 30 -acodec aac -b:a 96k -movflags faststart "{final_file}"'
+            
+        # Esecuzione del processo multimediale interno
+        subprocess.run(cmd_ffmpeg, shell=True, capture_output=True, text=True)
+        
+        # Rimozione immediata del file raw scaricato per liberare memoria sul server
+        if os.path.exists(raw_file):
+            os.remove(raw_file)
             
         if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
-            output_placeholder.success("File video generato con successo!")
+            progress_bar.empty()
+            status_text.empty()
+            output_placeholder.success("File video integrale generato con successo!")
             
-            # Creazione di un nome file pulito per il salvataggio locale dell'utente
+            # Normalizzazione del nome file finale per l'utente
             nome_file_pulito = scelta_sorgente.replace(' ', '_').replace('-', '_').replace('(', '').replace(')', '')
             nome_salvataggio = f"{nome_file_pulito}.mp4"
             
@@ -121,12 +136,14 @@ if st.button("Scarica e Genera File Video Integrale 🚀"):
                     mime="video/mp4"
                 )
         else:
-            output_placeholder.error("Errore: il file è stato scaricato ma risulta vuoto. Verifica lo spazio sul server cloud.")
+            output_placeholder.error("Errore durante l'ottimizzazione del file video locale. Spazio su disco terminato.")
             
     except Exception as e:
-        output_placeholder.error(f"Impossibile completare il download. Dettaglio tecnico del server sorgente: {str(e)}")
+        output_placeholder.error(f"Impossibile completare l'operazione di download. Dettaglio: {str(e)}")
         
-    # Rimozione dei residui temporanei dal disco del server
-    if os.path.exists(final_file):
-        try: os.remove(final_file)
-        except Exception: pass
+    # Pulizia automatica dello storage locale del server cloud per evitare saturazione
+    for f in [raw_file, final_file]:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except Exception: pass
+
