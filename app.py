@@ -22,38 +22,33 @@ if password_inserita != PASSWORD_CORRETTA:
 # ==========================================
 st.success("🔓 Accesso consentito!")
 
-# 1. MENU A TENDINA CON TUTTI GLI URL DEGLI INTERVENTI PRESENTI
+# 1. MENU A TENDINA CON GLI URL COMPLETI DELL'ASSEMBLEA
 st.subheader("🔗 Selezione Sorgente Video dell'Assemblea")
 
 dizionario_video = {
-    # --- REGISTRAZIONI INTEGRALI DELLE GIORNATE ---
-    "SABATO 13 GIUGNO - Registrazione Integrale (Intero File dell'Evento)": "https://radioradicale.it",
-    "DOMENICA 14 GIUGNO - Sessione Pomeridiana e Conclusioni (File Unificato)": "https://radioradicale.it",
-    
-    # --- INTERVENTI ED ESTRATTI SINGOLI PRESENTI ---
-    "SABATO - Roberto Vannacci (Conferenza Stampa ed Apertura dei Lavori - YouTube)": "https://youtube.com",
+    "REGISTRAZIONE INTEGRALE - Assemblea Costituente Nazionale (Flusso Completo - Radio Radicale)": "https://radioradicale.it",
+    "SABATO - Roberto Vannacci (Conferenza Stampa di Apertura - YouTube)": "https://youtube.com",
     "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo - YouTube)": "https://youtube.com",
-    "SORGENTE ALTERNATIVA - Sintesi Video e Highlights dell'Assemblea Costituente": "https://youtube.com"
+    "SORGENTE DI BACKUP - Sintesi e Highlights dell'Assemblea Costituente (YouTube)": "https://youtube.com"
 }
 
 scelta_sorgente = st.selectbox(
-    "Seleziona il video o l'intervento dell'Assemblea da analizzare e scaricare:", 
+    "Seleziona il file video completo dell'Assemblea Nazionale da analizzare:", 
     list(dizionario_video.keys())
 )
 url_selezionato = dizionario_video[scelta_sorgente]
 
-# Inizializzazione degli stati della sessione Streamlit per memorizzare i dati estratti
+# Gestione della memoria di sessione Streamlit per evitare analisi ripetute dello stesso URL
 if "info_estratte" not in st.session_state:
     st.session_state.info_estratte = None
 if "url_precedente" not in st.session_state:
     st.session_state.url_precedente = ""
 
-# Se cambia l'URL selezionato nella tendina, resetta le informazioni in cache
 if url_selezionato != st.session_state.url_precedente:
     st.session_state.info_estratte = None
     st.session_state.url_precedente = url_selezionato
 
-# 2. LETTURA DEI METADATI DEL VIDEO SELEZIONATO
+# 2. LETTURA DEI METADATI IN BACKGROUND
 if st.session_state.info_estratte is None:
     with st.spinner("🔍 Lettura delle risoluzioni e delle varianti disponibili sul server sorgente..."):
         ydl_opts = {
@@ -62,7 +57,7 @@ if st.session_state.info_estratte is None:
             'no_warnings': True,
             'extract_flat': False,
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
         }
         try:
@@ -70,12 +65,12 @@ if st.session_state.info_estratte is None:
                 info_dict = ydl.extract_info(url_selezionato, download=False)
                 st.session_state.info_estratte = info_dict
         except Exception as e:
-            st.error(f"❌ Impossibile leggere il flusso video del server. Dettaglio: {str(e)}")
+            st.error(f"❌ Impossibile leggere il flusso video del server. Verifica la connessione. Dettaglio: {str(e)}")
             st.stop()
 
 info = st.session_state.info_estratte
 
-# Estrazione dinamica delle risoluzioni reali verticali (es. 1080, 720, 480)
+# Estrazione delle risoluzioni reali disponibili (es. 1080, 720, 480)
 formati_grezzi = info.get('formats', [])
 qualita_disponibili = set()
 
@@ -85,50 +80,53 @@ for f in formati_grezzi:
         
 lista_altezze_ordinate = sorted(list(qualita_disponibili), reverse=True)
 
-# 3. COSTRUZIONE INTERFACCIA DI SELEZIONE DELLA QUALITÀ (CON ALTA E MEDIA)
-st.subheader("🎬 Configurazione Risoluzione Finale")
+# 3. INTERFACCIA DI SELEZIONE DELLA QUALITÀ CON VOCI PERSONALIZZATE
+st.subheader("🎬 Configurazione Risoluzione e Download")
 
-opzioni_qualita_utente = []
-mappatura_formati = {}
+opzioni_tendina = []
+mappatura_altezze = {}
 
-# Inserimento dinamico delle opzioni descrittive basate sulle altezze reali rilevate
+# Creazione delle etichette descrittive richieste (Alta, Media, Standard, Bassa)
 for altezza in lista_altezze_ordinate:
     if altezza >= 1080:
-        label = f"Alta Qualità ({altezza}p - Definizione Massima)"
+        label = f"Alta Qualità ({altezza}p - Massima Definizione)"
     elif altezza >= 720:
         label = f"Media Qualità ({altezza}p - Consigliata per PC)"
     elif altezza >= 480:
-        label = f"Qualità Standard ({altezza}p - Bilanciata per Smartphone)"
+        label = f"Qualità Standard ({altezza}p - Bilanciata)"
     else:
         label = f"Bassa Qualità ({altezza}p - File leggero)"
         
-    opzioni_qualita_utente.append(label)
-    mappatura_formati[label] = altezza
+    if label not in opzioni_tendina:
+        opzioni_tendina.append(label)
+        mappatura_altezze[label] = altezza
 
-# Se il server non restituisce altezze esplicite (es. file MP4 statici), mette i valori di default
-if not opzioni_qualita_utente:
-    opzioni_qualita_utente = ["Alta Qualità (Massima originale disponibile)", "Media Qualità (Risoluzione standard compressed)"]
-    mappatura_formati["Alta Qualità (Massima originale disponibile)"] = "best"
-    mappatura_formati["Media Qualità (Risoluzione standard compressed)"] = "720"
+# Fallback di sicurezza se la sorgente non espone altezze esplicite nel manifest
+if not opzioni_tendina:
+    opzioni_tendina = ["Alta Qualità (Massima originale disponibile)", "Media Qualità (720p Compresso)"]
+    mappatura_altezze["Alta Qualità (Massima originale disponibile)"] = "best"
+    mappatura_altezze["Media Qualità (720p Compresso)"] = "720"
 
-qualita_scelta = st.selectbox("Scegli il livello di qualità e compressione del video:", opzioni_qualita_utente)
+qualita_scelta = st.selectbox("Scegli il livello di qualità desiderato per il file integrale:", opzioni_tendina)
 
 output_placeholder = st.empty()
 
-# 4. PULSANTE DI ESECUZIONE DOWNLOAD DEL VIDEO INTEGRALE
+# 4. PULSANTE DI SCARICAMENTO DEL FILE INTERO
 if st.button("Scarica e Genera File Video Integrale 🚀"):
-    output_placeholder.warning("Connessione ai server di rete e download del file integrale avviato... Attendi.")
+    output_placeholder.warning("Connessione ai server cloud e download del flusso multimediale avviato... Attendi.")
     
     session_id = str(uuid.uuid4())[:8]
     final_file = f"video_{session_id}.mp4"
     
-    # Recupero del parametro altezza associato alla scelta dell'utente
-    valore_altezza = mappatura_formati[qualita_scelta]
+    target_height = mappatura_altezze[qualita_scelta]
     
-    if isinstance(valore_altezza, int):
-        stringa_formato = f"bestvideo[height<={valore_altezza}]+bestaudio/best[height<={valore_altezza}]"
+    # Generazione dei parametri di formato corretti per yt-dlp
+    if isinstance(target_height, int):
+        stringa_formato = f"bestvideo[height<={target_height}]+bestaudio/best[height<={target_height}]"
+    elif target_height == "best":
+        stringa_formato = "bestvideo+bestaudio/best"
     else:
-        stringa_formato = "bestvideo+bestaudio/best" if valore_altezza == "best" else "bestvideo[height<=720]+bestaudio/best"
+        stringa_formato = "bestvideo[height<=720]+bestaudio/best"
         
     ydl_opts_dl = {
         'format': stringa_formato,
@@ -137,7 +135,7 @@ if st.button("Scarica e Genera File Video Integrale 🚀"):
         'quiet': True,
         'no_warnings': True,
         'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
     }
     
@@ -145,18 +143,18 @@ if st.button("Scarica e Genera File Video Integrale 🚀"):
         with yt_dlp.YoutubeDL(ydl_opts_dl) as ydl:
             ydl.download([url_selezionato])
             
-        # Verifica ed eventuale normalizzazione dell'estensione del file unito
+        # Controllo della presenza del file finale generato sul disco del server
         if os.path.exists(f"video_{session_id}.mp4"):
             final_file = f"video_{session_id}.mp4"
         elif os.path.exists(f"video_{session_id}.mkv"):
             os.rename(f"video_{session_id}.mkv", f"video_{session_id}.mp4")
             
         if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
-            output_placeholder.success("Il file video integrale è stato scaricato ed è pronto!")
+            output_placeholder.success("File video integrale generato con successo!")
             
-            # Formattazione del nome di salvataggio pulito
-            nome_file_pulito = scelta_sorgente.split(' - ')[0].replace(' ', '_')
-            nome_salvataggio = f"{nome_file_pulito}_integrale.mp4"
+            # Creazione di un nome pulito per il salvataggio locale del file
+            nome_pulito = scelta_sorgente.split(' - ')[0].replace(' ', '_')
+            nome_salvataggio = f"{nome_pulito}_Integrale.mp4"
             
             with open(final_file, "rb") as file:
                 st.download_button(
@@ -166,13 +164,12 @@ if st.button("Scarica e Genera File Video Integrale 🚀"):
                     mime="video/mp4"
                 )
         else:
-            output_placeholder.error("Errore durante la scrittura locale del file multimediale. Spazio sul server insufficiente.")
+            output_placeholder.error("Errore durante il salvataggio del file video locale sul server storage.")
             
     except Exception as e:
-        output_placeholder.error(f"Impossibile completare il download. Errore del server sorgente: {str(e)}")
+        output_placeholder.error(f"Errore nello scaricamento del file alla qualità selezionata. Dettaglio: {str(e)}")
         
-    # Pulizia automatica dello storage locale del server cloud per evitare saturazione
+    # Rimozione dei residui video per non esaurire la memoria locale
     if os.path.exists(final_file):
         try: os.remove(final_file)
         except Exception: pass
-
