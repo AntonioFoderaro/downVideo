@@ -26,7 +26,7 @@ st.write("Seleziona l'oratore e decidi la risoluzione del video prima di avviare
 # URL DI STREAMING DIRETTO E REALE ESTRATTO DALL'ARCHIVIO DI RADIO RADICALE
 STREAM_UFFICIALE_UNIFICATO = "https://radioradicale.it"
 
-# Mappatura reale e definitiva calibrata sulla timeline effettiva del video ufficiale (Durata totale: 03:51:47)
+# Mappatura reale e definitiva calibrata sulla timeline effettiva del video ufficiale
 elenco_completo = {
     "REGISTRAZIONE INTEGRALE - Tutto l'Evento Unificato (3h 51m)": {"stream_url": STREAM_UFFICIALE_UNIFICATO, "start": None, "end": None},
     
@@ -69,29 +69,31 @@ if st.button("Scarica e Genera File Video 🚀"):
     session_id = str(uuid.uuid4())[:8]
     final_file = f"video_{session_id}.mp4"
     
-    # Costruzione dei parametri di ritaglio temporale nativo
+    # Intestazioni HTTP obbligatorie per simulare un browser ed evitare i blocchi del server sorgente
+    headers = '-user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" -headers "Accept: */*\r\n"'
+    
+    # Costruzione dei parametri di ritaglio temporale (spostati DOPO l'input -i per stabilità)
     time_args = ""
     if video_info["start"] and video_info["end"]:
         time_args = f"-ss {video_info['start']} -to {video_info['end']}"
     
-    # Mappatura dei comandi FFmpeg in base alla qualità per gestire i file MP4 progressivi
+    # Costruzione logica del comando FFmpeg basata sulla qualità scelta dall'utente
     if "Originale" in qualita_scelta:
-        # Copia istantanea dei pacchetti senza ricodifica: richiede pochissimi secondi
-        cmd_ffmpeg = f'ffmpeg -y {time_args} -i "{video_info["stream_url"]}" -c copy -movflags faststart "{final_file}"'
+        # Copia i flussi raw bypassando la ricodifica CPU
+        cmd_ffmpeg = f'ffmpeg -y {headers} -i "{video_info["stream_url"]}" {time_args} -c copy -movflags faststart "{final_file}"'
     elif "720p" in qualita_scelta:
-        # Scala l'immagine a 720p di altezza e applica una compressione bilanciata (CRF 26)
-        cmd_ffmpeg = f'ffmpeg -y {time_args} -i "{video_info["stream_url"]}" -vf "scale=-2:720" -vcodec libx264 -crf 26 -acodec aac -b:a 128k -movflags faststart "{final_file}"'
+        # Ricodifica e ridimensiona l'immagine a 720p di altezza
+        cmd_ffmpeg = f'ffmpeg -y {headers} -i "{video_info["stream_url"]}" {time_args} -vf "scale=-2:720" -vcodec libx264 -crf 26 -acodec aac -b:a 128k -movflags faststart "{final_file}"'
     else:
-        # Scala l'immagine a 480p per creare un file leggerissimo adatto ai telefoni
-        cmd_ffmpeg = f'ffmpeg -y {time_args} -i "{video_info["stream_url"]}" -vf "scale=-2:480" -vcodec libx264 -crf 30 -acodec aac -b:a 96k -movflags faststart "{final_file}"'
+        # Ricodifica a bassa risoluzione (480p) per smartphone
+        cmd_ffmpeg = f'ffmpeg -y {headers} -i "{video_info["stream_url"]}" {time_args} -vf "scale=-2:480" -vcodec libx264 -crf 30 -acodec aac -b:a 96k -movflags faststart "{final_file}"'
         
-    # Esecuzione dell'estrazione multimediale
+    # Esecuzione del processo di estrazione catturando gli errori completi
     ffmpeg_res = subprocess.run(cmd_ffmpeg, shell=True, capture_output=True, text=True)
     
     if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
         output_placeholder.success("Il file video dell'oratore è pronto per il salvataggio!")
         
-        # Pulizia del nome file per l'utente finale
         nome_salvataggio = f"{scelta.replace(' ', '_').replace('-', '').replace('(', '').replace(')', '').replace('\'', '')}.mp4"
         
         with open(final_file, "rb") as file:
@@ -102,11 +104,13 @@ if st.button("Scarica e Genera File Video 🚀"):
                 mime="video/mp4"
             )
     else:
-        output_placeholder.error(f"Impossibile estrarre il video. Log tecnico: {ffmpeg_res.stderr[:300]}")
+        # Stampa le ultime linee dell'errore FFmpeg reale per identificare blocchi di rete precisi
+        error_log = ffmpeg_res.stderr[-400:] if ffmpeg_res.stderr else "Nessun log generato."
+        output_placeholder.error(f"Errore nell'estrazione del video. Dettaglio tecnico del blocco:\n\n{error_log}")
     
-    # Rimozione immediata del file temporaneo locale per non saturare il server
+    # Rimozione dei file residui temporanei dal server cloud
     if os.path.exists(final_file):
         try:
-            os.remove(f"video_{session_id}.mp4")
+            os.remove(final_file)
         except Exception:
             pass
