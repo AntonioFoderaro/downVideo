@@ -88,8 +88,8 @@ if st.button("Scarica e Genera File Video 🚀"):
     session_id = str(uuid.uuid4())[:8]
     final_file = f"video_{session_id}.mp4"
     
-    # Comando yt-dlp lineare con la qualità dinamica impostata dall'utente
-    cmd_dl = f'yt-dlp {format_arg} --ext mp4 --no-playlist --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "{video_info["url"]}" -o "{final_file}"'
+    # Comando yt-dlp corretto con --merge-output-format mp4 per unire i flussi
+    cmd_dl = f'yt-dlp {format_arg} --merge-output-format mp4 --no-playlist --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "{video_info["url"]}" -o "{final_file}"'
     
     # Esecuzione del download
     dl_res = subprocess.run(cmd_dl, shell=True, capture_output=True, text=True)
