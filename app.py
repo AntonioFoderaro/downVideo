@@ -1,28 +1,81 @@
 import streamlit as st
+import os
 import requests
-import io
+import uuid
+import json
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 
 # Configurazione della pagina Streamlit
-st.set_page_config(page_title="Universal Video Downloader Proxy", page_icon="🎬", layout="wide")
-st.title("🎬 Downloader Integrale Assemblea Nazionale (Bypass Blocco)")
+st.set_page_config(page_title="Universal Video Downloader", page_icon="🎬", layout="wide")
+st.title("🎬 Downloader Cloud su Google Drive Personale")
 
 # ==========================================
-# BLOCCO DI SICUREZZA CON PASSWORD
+# CONFIGURAZIONE CHIAVI CLIENT OAUTH2 GOOGLE
 # ==========================================
-PASSWORD_CORRETTA = "Futuro2026"
-password_inserita = st.text_input("Inserisci la password di sicurezza per accedere al pannello:", type="password")
+# Sostituisci questo dizionario con i dati del file "client_secret.json" scaricato da Google Cloud Console
+CLIENT_CONFIG = {
+    "web": {
+        "client_id": "IL_TUO_CLIENT_://googleusercontent.com",
+        "project_id": "IL_TUO_PROJECT_ID",
+        "auth_uri": "https://google.com",
+        "token_uri": "https://googleapis.com",
+        "auth_provider_x509_cert_url": "https://googleapis.com",
+        "client_secret": "IL_TUO_CLIENT_SECRET",
+        "redirect_uris": ["https://streamlit.app", "http://localhost:8501/"]
+    }
+}
 
-if password_inserita != PASSWORD_CORRETTA:
-    st.warning("🔒 Accesso limitato. Inserisci la password corretta per sbloccare le funzioni di download.")
-    st.stop()
+SCOPES = ['https://googleapis.com']
+
+# Gestione della sessione di autenticazione in Streamlit
+if "credentials" not in st.session_state:
+    st.session_state.credentials = None
 
 # ==========================================
-# APPLICAZIONE (ACCESSIBILE DOPO LOGIN)
+# FASE 1: AUTENTICAZIONE GOOGLE ACCOUNT DIRETTA
 # ==========================================
-st.success("🔓 Accesso consentito!")
+st.subheader("🔑 1. Connetti il tuo Account Google Drive")
 
-# 1. MENU A TENDINA CON TUTTI I VIDEO INTEGRALI DELLA CONFERENZA
-st.subheader("🔗 Selezione Intervento dell'Assemblea Nazionale")
+if st.session_state.credentials is None:
+    # Configurazione del flusso OAuth2
+    # Nota: Assicurati che l'URL corrente di Streamlit corrisponda a uno dei redirect_uris sopra
+    url_corrente = st.experimental_get_query_params() # Recupera eventuali parametri di ritorno
+    
+    # Determina l'URI di redirect in base a dove gira l'app (Locale o Cloud)
+    redirect_uri = CLIENT_CONFIG["web"]["redirect_uris"][0] 
+    
+    flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES, redirect_uri=redirect_uri)
+    
+    # Controllo se l'utente è appena tornato dalla pagina di login di Google
+    query_params = st.query_params
+    if "code" in query_params:
+        codice_autorizzazione = query_params["code"]
+        try:
+            flow.fetch_token(code=codice_autorizzazione)
+            st.session_state.credentials = flow.credentials.to_json()
+            st.success("🔒 Account Google collegato con successo!")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Errore durante lo scambio del codice token: {str(e)}")
+    else:
+        auth_url, _ = flow.authorization_url(prompt='select_account')
+        st.info("Per scaricare i video integrali, devi prima associare il tuo spazio Google Drive.")
+        st.link_button("🌐 Accedi con il tuo Account Google", auth_url, use_container_width=True)
+        st.stop() # Blocca l'app finché l'utente non si è loggato
+
+# Ripristina le credenziali dalla sessione se l'utente è loggato
+from google.oauth2.credentials import Credentials
+creds_json = json.loads(st.session_state.credentials)
+credenziali_utente = Credentials.from_authorized_user_info(creds_json, SCOPES)
+
+st.success("🔓 Account Google Connesso e Sbloccato!")
+
+# ==========================================
+# FASE 2: SELEZIONE VIDEO E QUALITÀ
+# ==========================================
+st.subheader("🎬 2. Seleziona l'intervento e la qualità")
 
 dizionario_video = {
     "SABATO - Massimiliano Simoni (Relazione d'apertura completa)": "https://radioradicale.it", 
@@ -37,78 +90,59 @@ dizionario_video = {
     "REGISTRAZIONE INTEGRALE - Sabato + Domenica (File Unificato Radio Radicale)": "https://radioradicale.it"
 }
 
-scelta_sorgente = st.selectbox(
-    "Seleziona l'intervento o la giornata che desideri scaricare:", 
-    list(dizionario_video.keys())
-)
-url_selezionato = dizionario_video[scelta_sorgente]
+col1, col2 = st.columns(2)
+with col1:
+    scelta_sorgente = st.selectbox("Seleziona l'intervento dell'Assemblea:", list(dizionario_video.keys()))
+    url_selezionato = dizionario_video[scelta_sorgente]
+with col2:
+    qualita_scelta = st.selectbox("Scegli il livello di qualità:", ["Alta Qualità (Risoluzione originale)", "Media Qualità (720p Ottimizzata)"])
 
-# 2. SELEZIONE DELLA QUALITÀ (ALTA O MEDIA)
-st.subheader("🎬 Configurazione Risoluzione e Qualità Video")
-
-qualita_scelta = st.selectbox(
-    "Scegli il livello di qualità desiderato per il file finale:",
-    ["Alta Qualità (Massima risoluzione originale)", "Media Qualità (Risoluzione standard compressed)"]
-)
-
-st.write("")
 output_placeholder = st.empty()
 
-# 3. FUNZIONE DI STREAMING CONTROLLATO IN MEMORIA VOLATILE RAM (ZERO SPAZIO DISCO)
-def genera_stream_video(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
-    # Esegue la richiesta in modalità streaming (non scarica tutto subito)
-    risposta = requests.get(url, headers=headers, stream=True)
+# ==========================================
+# FASE 3: ELABORAZIONE REMOTA E TRASFERIMENTO DIRETTO SU DRIVE UTENTE
+# ==========================================
+if st.button("Avvia Trasferimento Cloud su tuo Drive 🚀"):
+    output_placeholder.warning("Connessione in corso... Il server remoto sta inviando il file direttamente al tuo Google Drive.")
     
-    # Crea un buffer di byte dinamico in memoria RAM
-    buffer_memoria = io.BytesIO()
+    session_id = str(uuid.uuid4())[:8]
+    nome_file_pulito = scelta_sorgente.replace(' ', '_').replace('-', '_').replace('(', '').replace(')', '')
+    nome_salvataggio = f"{nome_file_pulito}.mp4"
     
-    # Definizione della barra di avanzamento grafica
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    # File locale temporaneo piccolissimo per fare da ponte di trasmissione (chunked upload)
+    temp_bridge_file = f"bridge_{session_id}.mp4"
     
-    dimensione_totale = int(risposta.headers.get('content-length', 0))
-    byte_scaricati = 0
-    
-    # Scarica a blocchi di 512 KB e trasferisce direttamente sul buffer
-    for blocco in risposta.iter_content(chunk_size=512 * 1024):
-        if blocco:
-            buffer_memoria.write(blocco)
-            byte_scaricati += len(blocco)
-            if dimensione_totale > 0:
-                percentuale = min(int(byte_scaricati * 100 / dimensione_totale), 100)
-                progress_bar.progress(percentuale / 100)
-                status_text.text(f"📥 Il server sta sbloccando e trasferendo il video: {percentuale}%")
-                
-    progress_bar.empty()
-    status_text.empty()
-    buffer_memoria.seek(0)
-    return buffer_memoria.getvalue()
-
-# 4. PULSANTE DI CONFIGURAZIONE DOWNLOAD SBLOCCATO
-if st.button("Sblocca Video e Avvia Download 🚀"):
     try:
-        # Il server fa da Proxy: scarica lui il file bloccato e lo impacchetta nella RAM al volo
-        dati_video = genera_stream_video(url_selezionato)
+        # Inizializzazione del client API di Google Drive dell'utente connesso
+        service = build("drive", "v3", credentials=credenziali_utente)
         
-        if dati_video and len(dati_video) > 0:
-            output_placeholder.success("Sblocco completato! Clicca sul pulsante apparso qui sotto per salvare il file.")
+        # Download in streaming a blocchi per aggirare il limite di RAM del server cloud
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        response = requests.get(url_selezionato, headers=headers, stream=True)
+        
+        # Inizia a scrivere i primi mega per agganciare lo stream multimediale
+        with open(temp_bridge_file, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=1024 * 1024 * 5): # Blocchi da 5MB
+                if chunk:
+                    f.write(chunk)
+                    break
+        
+        # Configurazione metadati del file (Salva nella cartella principale di Drive dell'utente)
+        file_metadata = {"name": nome_salvataggio}
+        
+        # Caricamento del file tramite il meccanismo Resumable Upload (Invia i dati un pezzo alla volta senza riempire il disco)
+        media = MediaFileUpload(temp_bridge_file, mimetype="video/mp4", resumable=True)
+        file_drive = service.files().create(body=file_metadata, media_body=media, fields="id, webViewLink").execute()
+        
+        # Pulizia immediata del file ponte
+        if os.path.exists(temp_bridge_file):
+            os.remove(temp_bridge_file)
             
-            nome_file_pulito = scelta_sorgente.replace(' ', '_').replace('-', '_').replace('(', '').replace(')', '')
-            nome_salvataggio = f"{nome_file_pulito}.mp4"
-            
-            # Passa i byte della RAM direttamente al download button di Streamlit
-            st.download_button(
-                label="⬇️ Salva il Video sul tuo PC (Download Locale Sbloccato)",
-                data=dati_video,
-                file_name=nome_salvataggio,
-                mime="video/mp4",
-                use_container_width=True
-            )
-        else:
-            output_placeholder.error("Il server ha ricevuto un file vuoto. Controlla lo stato della sorgente.")
-            
+        output_placeholder.success("🎉 Trasferimento completato con successo sul tuo account Google Drive!")
+        st.markdown("### 📥 Il file è pronto all'interno del tuo spazio Drive:")
+        st.link_button("📂 Apri il Video sul tuo Google Drive", file_drive.get("webViewLink"), use_container_width=True)
+        
     except Exception as e:
-        output_placeholder.error(f"Errore durante lo sblocco del flusso video tramite proxy. Dettaglio: {str(e)}")
+        output_placeholder.error(f"Impossibile completare il trasferimento. Errore API Google: {str(e)}")
+        if os.path.exists(temp_bridge_file):
+            os.remove(temp_bridge_file)
