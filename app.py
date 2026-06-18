@@ -23,7 +23,7 @@ CLIENT_CONFIG = {
         "token_uri": "https://googleapis.com",
         "auth_provider_x509_cert_url": "https://googleapis.com",
         "client_secret": "IL_TUO_CLIENT_SECRET",
-        "redirect_uris": ["https://streamlit.app", "http://localhost:8501/"]
+        "redirect_uris": ["https://downvideo.streamlit.app/", "http://localhost:8501/"]
     }
 }
 
@@ -34,28 +34,28 @@ if "credentials" not in st.session_state:
     st.session_state.credentials = None
 
 # ==========================================
-# FASE 1: AUTENTICAZIONE GOOGLE ACCOUNT DIRETTA
+# FASE 1: AUTENTICAZIONE GOOGLE ACCOUNT DIRETTA (Sintassi Aggiornata)
 # ==========================================
 st.subheader("🔑 1. Connetti il tuo Account Google Drive")
 
 if st.session_state.credentials is None:
-    # Configurazione del flusso OAuth2
-    # Nota: Assicurati che l'URL corrente di Streamlit corrisponda a uno dei redirect_uris sopra
-    url_corrente = st.experimental_get_query_params() # Recupera eventuali parametri di ritorno
-    
-    # Determina l'URI di redirect in base a dove gira l'app (Locale o Cloud)
-    redirect_uri = CLIENT_CONFIG["web"]["redirect_uris"][0] 
+    # Determina l'URI di redirect in base a dove gira l'app
+    redirect_uri = CLIENT_CONFIG["web"]["redirect_uris"][0]
     
     flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES, redirect_uri=redirect_uri)
     
-    # Controllo se l'utente è appena tornato dalla pagina di login di Google
+    # Lettura moderna dei parametri URL tramite st.query_params
     query_params = st.query_params
+    
     if "code" in query_params:
         codice_autorizzazione = query_params["code"]
         try:
             flow.fetch_token(code=codice_autorizzazione)
             st.session_state.credentials = flow.credentials.to_json()
             st.success("🔒 Account Google collegato con successo!")
+            
+            # Pulisce i parametri dell'URL per evitare loop di ricaricamento
+            st.query_params.clear()
             st.rerun()
         except Exception as e:
             st.error(f"Errore durante lo scambio del codice token: {str(e)}")
@@ -106,6 +106,7 @@ if st.button("Avvia Trasferimento Cloud su tuo Drive 🚀"):
     output_placeholder.warning("Connessione in corso... Il server remoto sta inviando il file direttamente al tuo Google Drive.")
     
     session_id = str(uuid.uuid4())[:8]
+    # Pulizia del nome file sicura senza errori di split/replace combinati male
     nome_file_pulito = scelta_sorgente.replace(' ', '_').replace('-', '_').replace('(', '').replace(')', '')
     nome_salvataggio = f"{nome_file_pulito}.mp4"
     
