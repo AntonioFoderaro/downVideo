@@ -46,9 +46,7 @@ id_video_ufficiale = dizionario_video[scelta_sorgente]
 st.write("")
 st.subheader("📺 Player Iframe Istituzionale Sbloccato")
 
-# 2. INIEZIONE DEL PLAYER IFRAME SBLOCCATO
-# Questo codice carica il widget video originale di Radio Radicale. I tasti si sbloccano 
-# perché l'Iframe simula l'ambiente del loro sito web ufficiale.
+# 2. INIEZIONE DEL PLAYER IFRAME SBLOCCATO (Sistemata la formattazione dello slash nell'URL)
 iframe_html = f"""
 <div style="text-align: center;">
     <iframe 
@@ -63,7 +61,7 @@ iframe_html = f"""
 </div>
 """
 
-# Esecuzione del componente Iframe nativo di Streamlit (Bypassa i file da 0 byte e i limiti di spazio della RAM)
+# Esecuzione del componente Iframe nativo di Streamlit
 st.components.v1.html(iframe_html, height=570)
 
 # 3. ISTRUZIONI DI COMPRESSIONE E SALVATAGGIO
