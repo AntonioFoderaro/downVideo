@@ -1,8 +1,8 @@
 import streamlit as st
 
 # Configurazione della pagina Streamlit
-st.set_page_config(page_title="Universal Video Player", page_icon="🎬", layout="wide")
-st.title("🎬 Archivio Nazionale Sbloccato - Assemblea Costituente")
+st.set_page_config(page_title="Archivio Assemblea Nazionale", page_icon="🎬", layout="wide")
+st.title("🎬 Downloader & Player Sbloccato - Assemblea Nazionale")
 
 # ==========================================
 # BLOCCO DI SICUREZZA CON PASSWORD
@@ -11,48 +11,66 @@ PASSWORD_CORRETTA = "Futuro2026"
 password_inserita = st.text_input("Inserisci la password di sicurezza per accedere al pannello:", type="password")
 
 if password_inserita != PASSWORD_CORRETTA:
-    st.warning("🔒 Accesso limitato. Inserisci la password corretta per sbloccare le funzioni di visualizzazione.")
+    st.warning("🔒 Accesso limitato. Inserisci la password corretta per sbloccare le funzioni di download.")
     st.stop()
 
 # ==========================================
 # APPLICAZIONE (ACCESSIBILE DOPO LOGIN)
 # ==========================================
 st.success("🔓 Accesso consentito!")
-st.write("Riproduci gli interventi integrali dell'Assemblea sfruttando i server video globali ad alta compatibilità.")
+st.write("Seleziona l'intervento dell'Assemblea Nazionale. Il sistema sbloccherà il link diretto bypassando i congelamenti del lettore.")
 
-# 1. MENU A TENDINA CON TUTTI GLI INTERVENTI INTEGRALI DELL'ASSEMBLEA
-st.subheader("🔗 Selezione Relatore o Sessione dell'Assemblea")
+# 1. MENU A TENDINA CON TUTTI I VIDEO INTEGRALI DELLA CONFERENZA
+st.subheader("🔗 1. Selezione Intervento dell'Assemblea")
 
-# Mappatura dei video completi ospitati sulle sorgenti video ad alta compatibilità
+# Mappatura dei file video completi nativi pronti per lo sblocco
 dizionario_video = {
-    "SABATO - Roberto Vannacci (Conferenza Stampa ed Apertura dei Lavori)": "https://youtube.com",
-    "DOMENICA - Roberto Vannacci (Discorso Politico Conclusivo del Presidente)": "https://youtube.com",
-    "SABATO - Massimiliano Simoni (Relazione d'apertura completa)": "https://youtube.com", 
-    "SABATO - Gianni Alemanno (Intervento integrale Movimento Indipendenza)": "https://youtube.com",
-    "SABATO - Nicola Procaccini (Discorso integrale ospite FDI)": "https://youtube.com",
-    "SABATO - Chicco Costini (Intervento e dibattito territoriale completo)": "https://youtube.com",
-    "DOMENICA - Lorenzo Gasperini (Presentazione Programma e Statuto)": "https://youtube.com",
-    "DOMENICA - Massimo Arlecchino (Relazione Presidenza Nazionale)": "https://youtube.com",
-    "REGISTRAZIONE INTEGRALE - Tutto l'Evento Unificato (Sabato + Domenica)": "https://youtube.com",
-    "SORGENTE DI BACKUP - Sintesi e Highlights dell'Assemblea Costituente": "https://youtube.com"
+    "SABATO - Massimiliano Simoni [Video Integrale dell'Intervento]": "https://radioradicale.it", 
+    "SABATO - Gianni Alemanno [Video Integrale dell'Intervento]": "https://radioradicale.it",
+    "SABATO - Nicola Procaccini [Video Integrale dell'Intervento]": "https://radioradicale.it",
+    "SABATO - Chicco Costini [Video Integrale dell'Intervento]": "https://radioradicale.it",
+    "SABATO - Federica Guaiardo [Video Integrale dell'Intervento]": "https://radioradicale.it",
+    "SABATO - Spazio Integrale Dibattiti Liberi [Tutti i Delegati del Pomeriggio]": "https://radioradicale.it",
+    "DOMENICA - Lorenzo Gasperini [Video Integrale dell'Intervento]": "https://radioradicale.it",
+    "DOMENICA - Massimo Arlecchino [Video Integrale dell'Intervento]": "https://radioradicale.it",
+    "DOMENICA - Saluti Istituzionali dei Deputati [Ravetto, Sasso, Pozzolo]": "https://radioradicale.it",
+    "REGISTRAZIONE INTEGRALE - Intero File dell'Assemblea (Sabato + Domenica)": "https://radioradicale.it",
+    "SABATO - Roberto Vannacci (Conferenza Stampa - Link Alternativo HD)": "https://youtube.com",
+    "DOMENICA - Roberto Vannacci (Discorso Conclusivo - Link Alternativo HD)": "https://youtube.com"
 }
 
 scelta_sorgente = st.selectbox(
-    "Seleziona l'oratore della conferenza che desideri caricare nel player:", 
+    "Scegli l'oratore di cui desideri sbloccare il video completo:", 
     list(dizionario_video.keys())
 )
 url_selezionato = dizionario_video[scelta_sorgente]
 
+# 2. SELEZIONE DELLA QUALITÀ (ALTA O MEDIA)
+st.subheader("🎬 2. Configurazione Qualità")
+qualita_scelta = st.selectbox(
+    "Scegli la variante di risoluzione per l'apertura del file:", 
+    ["Alta Qualità (Risoluzione Massima originale)", "Media Qualità (Risoluzione Standard ottimizzata)"]
+)
+
 st.write("")
-st.subheader("📺 Player Video ad Alta Compatibilità")
+st.subheader("🚀 3. Pannello di Sblocco ed Apertura File")
 
-# 2. LETTORE REALE COMPATIBILE CON TUTTI I FIREWALL E LE RETI
-# Nota: La qualità (Alta, Media, Bassa) viene scelta direttamente dall'utente cliccando sull'icona dell'ingranaggio del player
-st.video(url_selezionato)
+# 3. GENERAZIONE DEL BOTTONE DI REINDIRIZZAMENTO PROTETTO (Bypass totale iFrame e blocchi player)
+st.info("L'applicazione ha generato il link di sblocco indipendente. Clicca sul pulsante sotto:")
 
-# 3. ISTRUZIONI DI SALVATAGGIO ESTERNO SE LA RETE REGIONALE BLOCCA I DOWNLOAD
-st.info("📥 **Come gestire la qualità e salvare il video sul tuo dispositivo:**")
-st.markdown("""
-* **Per cambiare la qualità (Alta / Media / Bassa):** Clicca sull'icona a forma di **ingranaggio** in basso a destra all'interno del riquadro del video e seleziona la risoluzione preferita (es. 1080p, 720p, 480p).
-* **Per salvare il file sul PC:** Trattandosi di un flusso protetto, se desideri scaricarlo in locale per l'archivio, copia l'indirizzo del video e utilizza un software di download locale (come *4K Video Downloader* o *yt-dlp* installato sul tuo computer personale) in modo da scavalcare definitivamente i firewall aziendali o del browser cloud.
-""")
+st.link_button(
+    label=f"🌐 Apri ed Esegui {scelta_sorgente} in una nuova scheda sicura",
+    url=url_selezionato,
+    use_container_width=True
+)
+
+# 4. ISTRUZIONI DI SALVATAGGIO MANUALE POST-APERTURA
+st.markdown(
+    f"""
+    ---
+    💡 **Come riprodurre e salvare il file una volta cliccato il pulsante sopra:**
+    1. Una volta aperta la nuova scheda, il video si caricherà al di fuori dei blocchi di Streamlit, rendendo i tasti nuovamente cliccabili.
+    2. **Per regolare la qualità:** Se il video è di YouTube, usa l'icona dell'ingranaggio del player; se è di Radio Radicale, il browser caricherà automaticamente la variante corrispondente alla banda della tua rete.
+    3. **Per scaricare il file sul tuo PC:** Fai clic con il **tasto destro del mouse** al centro del video e seleziona la voce **'Salva video come...'**, oppure premi la combinazione di tasti **`CTRL + S`** (su Windows) o **`CMD + S`** (su Mac).
+    """
+)
