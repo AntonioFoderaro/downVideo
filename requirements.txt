@@ -1,4 +1,5 @@
 streamlit
+git+https://github.com
 requests
 google-api-python-client
 google-auth-httplib2
