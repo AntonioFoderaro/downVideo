@@ -1,75 +1,112 @@
 import streamlit as st
+import os
+import subprocess
 
-# Configurazione iniziale della pagina Streamlit
-st.set_page_config(page_title="Universal Video Downloader", page_icon="🎬", layout="wide")
-st.title("🎬 Sblocco File Integrale Assemblea Nazionale")
+st.set_page_config(page_title="Universal Video Downloader & Compressor", page_icon="🎬")
+st.title("🎬 Downloader Assemblea Nazionale")
 
 # ==========================================
 # BLOCCO DI SICUREZZA CON PASSWORD
 # ==========================================
 PASSWORD_CORRETTA = "Futuro2026"
+
 password_inserita = st.text_input("Inserisci la password di sicurezza per accedere al pannello:", type="password")
 
 if password_inserita != PASSWORD_CORRETTA:
     st.warning("🔒 Accesso limitato. Inserisci la password corretta per sbloccare le funzioni di download.")
-    st.stop()
+    st.stop()  # Interrompe l'applicazione qui finché la password non è corretta
 
 # ==========================================
-# APPLICAZIONE (ACCESSIBILE DOPO LOGIN)
+# APPLICAZIONE REALE (ACCESSIBILE DOPO LOGIN)
 # ==========================================
 st.success("🔓 Accesso consentito!")
-st.write("Seleziona l'intervento dell'Assemblea Nazionale per generare la stringa di sblocco immediato.")
+st.write("Scarica, taglia e comprime qualsiasi intervento dell'Assemblea Costituente di Roma (13-14 Giugno).")
 
-# 1. MENU A TENDINA CON TUTTI I VIDEO INTEGRALI DELLA CONFERENZA
-st.subheader("🔗 Selezione Intervento dell'Assemblea")
-
-dizionario_video = {
-    "SABATO - Massimiliano Simoni [Video Integrale]": "https://radioradicale.it", 
-    "SABATO - Gianni Alemanno [Video Integrale]": "https://radioradicale.it",
-    "SABATO - Nicola Procaccini [Video Integrale]": "https://radioradicale.it",
-    "SABATO - Chicco Costini [Video Integrale]": "https://radioradicale.it",
-    "SABATO - Federica Guaiardo [Video Integrale]": "https://radioradicale.it",
-    "SABATO - Spazio Integrale Dibattiti Liberi [Pomeriggio Completo]": "https://radioradicale.it",
-    "DOMENICA - Lorenzo Gasperini [Video Integrale]": "https://radioradicale.it",
-    "DOMENICA - Massimo Arlecchino [Video Integrale]": "https://radioradicale.it",
-    "DOMENICA - Saluti Istituzionali dei Deputati [Ravetto, Sasso, Pozzolo]": "https://radioradicale.it",
-    "REGISTRAZIONE INTEGRALE - Intero File dell'Assemblea (Sabato + Domenica)": "https://radioradicale.it",
-    "SABATO - Roberto Vannacci (Conferenza Stampa - YouTube)": "https://youtube.com",
-    "DOMENICA - Roberto Vannacci (Discorso Conclusivo - YouTube)": "https://youtube.com"
+# Mappatura completa di tutti gli interventi divisi per oratore e giornata
+elenco_completo = {
+    # --- SABATO 13 GIUGNO ---
+    "SABATO - Registrazione Integrale (1a Giornata Completa)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "SABATO - Roberto Vannacci (Conferenza Stampa Integrale)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "SABATO - Massimiliano Simoni (Relazione d'apertura)": {"url": "https://radioradicale.it", "start": "00:05:00", "end": "00:25:00"},
+    "SABATO - Gianni Alemanno (Intervento Indipendenza)": {"url": "https://radioradicale.it", "start": "00:45:00", "end": "01:10:00"},
+    "SABATO - Nicola Procaccini (Coordinatore FDI)": {"url": "https://radioradicale.it", "start": "01:30:00", "end": "01:50:00"},
+    
+    # --- DOMENICA 14 GIUGNO ---
+    "DOMENICA - Registrazione Integrale (2a Giornata Completa)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Roberto Vannacci (Intervento Politico Conclusivo)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Laura Ravetto (Deputato)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Rossano Sasso (Deputato)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Massimo Arlecchino (Pres. Indipendenza)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Massimiliano Simoni (Coordinatore Nazionale)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Lorenzo Gasperini (Presentazione Programma)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Emanuele Pozzolo (Deputato)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    "DOMENICA - Stefano Valdegamberi (Consigliere Veneto)": {"url": "https://radioradicale.it", "start": None, "end": None},
+    
+    # --- SORGENTI ALTERNATIVE (YOUTUBE) ---
+    "SORGENTE YOUTUBE - Video Completo Unificato (Sabato + Domenica)": {"url": "https://youtube.com", "start": None, "end": None},
+    "SORGENTE YOUTUBE - Focus Roberto Vannacci (Intervento del Sabato)": {"url": "https://youtube.com", "start": None, "end": None}
 }
 
-scelta_sorgente = st.selectbox(
-    "Seleziona l'intervento o la giornata che desideri salvare:", 
-    list(dizionario_video.keys())
-)
-url_video_originale = dizionario_video[scelta_sorgente]
+# 1. Interfaccia di Selezione dell'utente
+scelta = st.selectbox("1. Scegli l'intervento o il blocco completo che desideri scaricare:", list(elenco_completo.keys()))
+video_info = elenco_completo[scelta]
 
-# 2. SELEZIONE FISSA DELLA QUALITÀ CON ALTA E MEDIA
-st.subheader("🎬 Configurazione Qualità")
-qualita_scelta = st.selectbox(
-    "Scegli il livello di qualità del file finale:", 
-    ["Alta Qualità (Massima originale nativa)", "Media Qualità (720p Compresso ottimizzato)"]
+# 2. Scelta della Compressione via Hardware Cloud (FFmpeg)
+compression = st.radio(
+    "2. Scegli il livello di compressione (Consigliato per i video integrali molto lunghi):",
+    ('Bilanciata (Consigliata - Riduce il peso del 60% mantenendo i dettagli)', 'Massima (File super leggero permanence smartphone)', 'Nessuna (Qualità Originale - Attenzione al peso)')
 )
 
-st.write("")
-st.subheader("🚀 Pannello di Sblocco Comando Locale")
+crf_val = 28
+if compression == 'Massima (File super leggero permanence smartphone)': 
+    crf_val = 33
+elif compression == 'Nessuna (Qualità Originale - Attenzione al peso)': 
+    crf_val = 23
 
-# Formattazione del nome file per il salvataggio
-nome_file_pulito = scelta_sorgente.replace(' ', '_').replace('-', '_').replace('[', '').replace(']', '')
-nome_salvataggio = f"{nome_file_pulito}.mp4"
+output_placeholder = st.empty()
 
-# 3. GENERAZIONE DEL COMANDO DI SCARICAMENTO UNIVERSALE AUTOMATICO (FFMPEG NATIVO)
-if "Alta" in qualita_scelta:
-    comando_generato = f'ffmpeg -y -user_agent "Mozilla/5.0" -i "{url_video_originale}" -c copy {nome_salvataggio}'
-else:
-    comando_generato = f'ffmpeg -y -user_agent "Mozilla/5.0" -i "{url_video_originale}" -vf "scale=-2:720" -vcodec libx264 -crf 24 -acodec aac {nome_salvataggio}'
+# 3. Pulsante di Esecuzione delle Operazioni
+if st.button("Elabora Video e Genera Download 🚀"):
+    output_placeholder.warning("Download del flusso multimediale in corso sui server cloud... Attendi.")
+    
+    raw_file = "raw_video.mp4"
+    final_file = "output_finale.mp4"
+    
+    # Pulizia preliminare della cache per evitare conflitti
+    for f in [raw_file, final_file]:
+        if os.path.exists(f): os.remove(f)
+        
+    # Download forzato sul cloud tramite yt-dlp
+    cmd_dl = f'yt-dlp "{video_info["url"]}" -o "{raw_file}"'
+    dl_res = subprocess.run(cmd_dl, shell=True)
+    
+    if dl_res.returncode == 0 and os.path.exists(raw_file):
+        output_placeholder.warning("Taglio temporale e compressione del video sul cloud in corso...")
+        
+        # Generazione dei parametri temporali di ritaglio per FFmpeg
+        time_args = ""
+        if video_info["start"] and video_info["end"]:
+            time_args = f'-ss {video_info["start"]} -to {video_info["end"]}'
+            
+        # Comando combinato FFmpeg per tagliare e comprimere l'audio/video
+        cmd_ffmpeg = f'ffmpeg {time_args} -i {raw_file} -vcodec libx264 -crf {crf_val} -acodec aac -b:a 128k {final_file}'
+        subprocess.run(cmd_ffmpeg, shell=True)
+        
+        if os.path.exists(final_file):
+            output_placeholder.success("Elaborazione completata con successo! Il file è pronto.")
+            
+            # Formattazione di un nome file sicuro
+            nome_salvataggio = f"{scelta.replace(' ', '_').replace('-', '').replace('(', '').replace(')', '')}.mp4"
+            
+            with open(final_file, "rb") as file:
+                st.download_button(
+                    label="⬇️ Scarica il Video sul tuo PC",
+                    data=file,
+                    file_name=nome_salvataggio,
+                    mime="video/mp4"
+                )
+        else:
+            output_placeholder.error("Errore imprevisto durante la compressione o il ritaglio dello spezzone.")
+    else:
+        output_placeholder.error("Impossibile recuperare il file video originale. Il server della sorgente è sovraccarico.")
 
-st.info("💡 **Istruzioni per scaricare il file in 5 secondi senza passare dal browser o dal server:**")
-st.markdown(f"""
-1. Fai clic sul pulsante in alto a destra nel riquadro grigio qui sotto per **copiare il comando preconfigurato**.
-2. Apri il **Terminale** (o il *Prompt dei comandi*) sul tuo computer personale.
-3. Incolla il testo copiato e premi **Invio**: il tuo PC avvierà il download diretto alla massima velocità, salvando il file video integro nella cartella corrente.
-""")
-
-# Mostra il comando pronto per essere copiato in un clic con il tasto nativo di Streamlit
-st.code(comando_generato, language="bash")
