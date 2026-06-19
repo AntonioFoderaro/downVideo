@@ -1,48 +1,37 @@
-if st.button("Elabora"):
-    log = st.empty()
-    log.write("Download in corso...")
+import streamlit as st
+import os
+import subprocess
+import json
 
-    raw = "raw.mp4"
-    out = "finale.mp4"
+st.set_page_config(page_title="Downloader Assemblea", page_icon="🎬")
+st.title("Downloader Assemblea Nazionale")
 
-    for f in [raw, out]:
-        if os.path.exists(f):
-            os.remove(f)
+PASSWORD = "Futuro2026"
+pwd = st.text_input("Password:", type="password")
 
-    # DOWNLOAD
-    log.write("Eseguo yt-dlp...")
-    r = scarica(info["url"], raw)
+if pwd != PASSWORD:
+    st.warning("Password errata.")
+    st.stop()
 
-    if r.returncode != 0 or not os.path.exists(raw):
-        log.write("Comando eseguito:")
-        log.write(str(r))
-        st.error("Errore nel download.")
-        st.stop()
+st.success("Accesso consentito.")
 
-    log.write("Download completato.")
+# URL
+URL_YT_SAB = "https://youtu.be/XRDS0ySvQNU"
+URL_FB_SAB = "https://www.facebook.com/watch/?v=1676283610284508"
+URL_RR_SAB = "https://www.radioradicale.it/scheda/792067/conferenza-stampa-di-roberto-vannacci-a-margine-della-prima-giornata-dellassemblea"
+URL_YT_SAB1 = "https://www.youtube.com/watch?v=8pYxQ8Q2YpE"
+URL_YT_SAB2 = "https://www.youtube.com/watch?v=1u8j8p2t0xA"
+URL_RR_DOM = "https://www.radioradicale.it/scheda/791851/assemblea-costituente-di-futuro-nazionale-2a-giornata"
 
-    # CONVERSIONE
-    log.write("Conversione in corso...")
-
-    t = ""
-    if info["start"] and info["end"]:
-        t = f'-ss {info["start"]} -to {info["end"]}'
-
-    cmd = f'ffmpeg -y {t} -i "{raw}" {ff} "{out}"'
-    log.write("Eseguo ffmpeg:")
-    log.write(cmd)
-
-    conv = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-
-    log.write("Output FFmpeg:")
-    log.write(conv.stdout)
-    log.write(conv.stderr)
-
-    if not os.path.exists(out):
-        st.error("Errore durante la conversione.")
-        st.stop()
-
-    st.success("Pronto!")
-
-    with open(out, "rb") as f:
-        st.download_button("Scarica", f, file_name="video.mp4")
+# Dizionario interventi
+elenco = {
+    "Sabato - Integrale YouTube": {
+        "url": URL_YT_SAB, "start": None, "end": None
+    },
+    "Sabato - Conferenza Vannacci RR": {
+        "url": URL_RR_SAB, "start": None, "end": None
+    },
+    "Sabato - Clip Facebook": {
+        "url": URL_FB_SAB, "start": None, "end": None
+    },
+    "Sab
