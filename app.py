@@ -3,88 +3,117 @@ import os
 import subprocess
 import json
 
-st.set_page_config(page_title="Downloader Assemblea Nazionale", page_icon="🎬")
-st.title("Downloader Assemblea Nazionale - Futuro Nazionale")
+st.set_page_config(page_title="Downloader Assemblea", page_icon="🎬")
+st.title("Downloader Assemblea Nazionale")
 
-PASSWORD_CORRETTA = "Futuro2026"
-password_inserita = st.text_input("Inserisci la password per accedere:", type="password")
+PASSWORD = "Futuro2026"
+pwd = st.text_input("Password:", type="password")
 
-if password_inserita != PASSWORD_CORRETTA:
-    st.warning("Accesso limitato. Inserisci la password corretta.")
+if pwd != PASSWORD:
+    st.warning("Password errata.")
     st.stop()
 
-st.success("Accesso consentito!")
-st.write("Scarica, taglia, comprimi o cerca automaticamente i video dell'Assemblea Costituente di Roma (13-14 Giugno).")
+st.success("Accesso consentito.")
 
-URL_YT_SABATO_INTEGRALE = "https://youtu.be/XRDS0ySvQNU"
-URL_FB_EXTRA_SABATO = "https://www.facebook.com/watch/?v=1676283610284508"
-URL_RR_CONFERENZA_VANNACCI = "https://www.radioradicale.it/scheda/792067/conferenza-stampa-di-roberto-vannacci-a-margine-della-prima-giornata-dellassemblea"
-URL_YT_SABATO_CLIP1 = "https://www.youtube.com/watch?v=8pYxQ8Q2YpE"
-URL_YT_SABATO_CLIP2 = "https://www.youtube.com/watch?v=1u8j8p2t0xA"
-URL_RR_DOMENICA_INTEGRALE = "https://www.radioradicale.it/scheda/791851/assemblea-costituente-di-futuro-nazionale-2a-giornata"
+URL_YT_SAB = "https://youtu.be/XRDS0ySvQNU"
+URL_FB_SAB = "https://www.facebook.com/watch/?v=1676283610284508"
+URL_RR_SAB = "https://www.radioradicale.it/scheda/792067/conferenza-stampa-di-roberto-vannacci-a-margine-della-prima-giornata-dellassemblea"
+URL_YT_SAB1 = "https://www.youtube.com/watch?v=8pYxQ8Q2YpE"
+URL_YT_SAB2 = "https://www.youtube.com/watch?v=1u8j8p2t0xA"
+URL_RR_DOM = "https://www.radioradicale.it/scheda/791851/assemblea-costituente-di-futuro-nazionale-2a-giornata"
 
-elenco_completo = {
-    "SABATO - Registrazione Integrale (YouTube)": {
-        "url": URL_YT_SABATO_INTEGRALE, "start": None, "end": None
+elenco = {
+    "Sabato - Integrale YouTube": {
+        "url": URL_YT_SAB, "start": None, "end": None
     },
-    "SABATO - Conferenza Stampa Roberto Vannacci (Radio Radicale)": {
-        "url": URL_RR_CONFERENZA_VANNACCI, "start": None, "end": None
+    "Sabato - Conferenza Vannacci RR": {
+        "url": URL_RR_SAB, "start": None, "end": None
     },
-    "SABATO - Clip Extra (Facebook Watch)": {
-        "url": URL_FB_EXTRA_SABATO, "start": None, "end": None
+    "Sabato - Clip Facebook": {
+        "url": URL_FB_SAB, "start": None, "end": None
     },
-    "SABATO - Clip YouTube 1": {
-        "url": URL_YT_SABATO_CLIP1, "start": None, "end": None
+    "Sabato - Clip YouTube 1": {
+        "url": URL_YT_SAB1, "start": None, "end": None
     },
-    "SABATO - Clip YouTube 2": {
-        "url": URL_YT_SABATO_CLIP2, "start": None, "end": None
+    "Sabato - Clip YouTube 2": {
+        "url": URL_YT_SAB2, "start": None, "end": None
     },
-    "DOMENICA - Registrazione Integrale (Radio Radicale)": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": None, "end": None
+    "Domenica - Integrale RR": {
+        "url": URL_RR_DOM, "start": None, "end": None
     },
-    "DOMENICA - Roberto Vannacci (Conclusioni)": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": "03:41:20", "end": "03:51:47"
+    "Domenica - Vannacci": {
+        "url": URL_RR_DOM, "start": "03:41:20", "end": "03:51:47"
     },
-    "DOMENICA - Laura Ravetto": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": "03:31:50", "end": "03:41:10"
+    "Domenica - Ravetto": {
+        "url": URL_RR_DOM, "start": "03:31:50", "end": "03:41:10"
     },
-    "DOMENICA - Rossano Sasso": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": "03:31:50", "end": "03:41:10"
+    "Domenica - Sasso": {
+        "url": URL_RR_DOM, "start": "03:31:50", "end": "03:41:10"
     },
-    "DOMENICA - Massimo Arlecchino": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": "03:22:10", "end": "03:31:40"
+    "Domenica - Arlecchino": {
+        "url": URL_RR_DOM, "start": "03:22:10", "end": "03:31:40"
     },
-    "DOMENICA - Massimiliano Simoni": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": "00:01:10", "end": "00:26:40"
+    "Domenica - Simoni": {
+        "url": URL_RR_DOM, "start": "00:01:10", "end": "00:26:40"
     },
-    "DOMENICA - Lorenzo Gasperini": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": "03:10:10", "end": "03:22:00"
+    "Domenica - Gasperini": {
+        "url": URL_RR_DOM, "start": "03:10:10", "end": "03:22:00"
     },
-    "DOMENICA - Emanuele Pozzolo": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": "03:31:50", "end": "03:41:10"
+    "Domenica - Pozzolo": {
+        "url": URL_RR_DOM, "start": "03:31:50", "end": "03:41:10"
     },
-    "DOMENICA - Stefano Valdegamberi": {
-        "url": URL_RR_DOMENICA_INTEGRALE, "start": "03:31:50", "end": "03:41:10"
+    "Domenica - Valdegamberi": {
+        "url": URL_RR_DOM, "start": "03:31:50", "end": "03:41:10"
     }
 }
 
-def scarica_video(url, output):
+def scarica(url, out):
     if "facebook.com" in url:
-        cmd = f'yt-dlp --cookies-from-browser chrome --user-agent "Mozilla/5.0" "{url}" -o "{output}"'
+        cmd = f'yt-dlp --cookies-from-browser chrome "{url}" -o "{out}"'
     elif "radioradicale.it" in url:
-        cmd = f'yt-dlp --allow-unplayable-formats --user-agent "Mozilla/5.0" "{url}" -o "{output}"'
+        cmd = f'yt-dlp --allow-unplayable-formats "{url}" -o "{out}"'
     else:
-        cmd = f'yt-dlp --user-agent "Mozilla/5.0" "{url}" -o "{output}"'
+        cmd = f'yt-dlp "{url}" -o "{out}"'
     return subprocess.run(cmd, shell=True)
 
-st.header("Interventi ufficiali")
-scelta = st.selectbox("Scegli l'intervento:", list(elenco_completo.keys()))
-video_info = elenco_completo[scelta]
+st.header("Interventi")
+scelta = st.selectbox("Scegli:", list(elenco.keys()))
+info = elenco[scelta]
 
-st.header("Ricerca automatica video")
-query = st.text_input("Cerca un video:")
+st.header("Conversione")
+mode = st.selectbox(
+    "Modalita:",
+    [
+        "CRF18",
+        "CRF28",
+        "CRF33",
+        "720p",
+        "480p",
+        "360p",
+        "MP3"
+    ]
+)
 
-if st.button("Cerca video"):
-    st.info("Ricerca in corso...")
-    cmd_search = f'yt-dlp "ytsearch5:{query}" --dump-json'
-    result = subprocess.run(cmd_search, shell
+if mode == "CRF18":
+    ff = "-vcodec libx264 -crf 18 -acodec aac"
+elif mode == "CRF28":
+    ff = "-vcodec libx264 -crf 28 -acodec aac"
+elif mode == "CRF33":
+    ff = "-vcodec libx264 -crf 33 -acodec aac"
+elif mode == "720p":
+    ff = "-vf scale=-1:720 -vcodec libx264 -crf 23 -acodec aac"
+elif mode == "480p":
+    ff = "-vf scale=-1:480 -vcodec libx264 -crf 23 -acodec aac"
+elif mode == "360p":
+    ff = "-vf scale=-1:360 -vcodec libx264 -crf 23 -acodec aac"
+elif mode == "MP3":
+    ff = "-vn -acodec libmp3lame -b:a 128k"
+
+if st.button("Elabora"):
+    raw = "raw.mp4"
+    out = "finale.mp4"
+
+    for f in [raw, out]:
+        if os.path.exists(f):
+            os.remove(f)
+
